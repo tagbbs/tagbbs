@@ -16,5 +16,5 @@ type Storage interface {
 	// If the length of the Content of the Post is zero, the post is considered safe to be deleted.
 	Put(key string, p Post) error
 	// Enumerate all posts with given prefix.
-	Enumerate(prefix string, pp func(Post)) error
+	// Enumerate(prefix string, pp func(Post)) error
 }

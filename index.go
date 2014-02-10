@@ -1,6 +1,8 @@
 package tagbbs
 
-type idlist []string
+import (
+	"sort"
+)
 
 func (b *BBS) indexRemove(key string, p Post) {
 	fm := p.FrontMatter()
@@ -8,13 +10,11 @@ func (b *BBS) indexRemove(key string, p Post) {
 		return
 	}
 	for _, tag := range fm.Tags {
-		var ids idlist
+		var ids []string
 		b.modify("tag:"+tag, &ids, func(v interface{}) {
-			for i, id := range ids {
-				if id == key {
-					ids = append(ids[:i], ids[i+1:]...)
-					break
-				}
+			i := sort.StringSlice(ids).Search(key)
+			if i < len(ids) && ids[i] == key {
+				ids = append(ids[:i], ids[i+1:]...)
 			}
 		})
 	}
@@ -26,15 +26,18 @@ func (b *BBS) indexAdd(key string, p Post) {
 		return
 	}
 	for _, tag := range fm.Tags {
-		var ids idlist
+		var ids []string
 		b.modify("tag:"+tag, &ids, func(v interface{}) {
-			ids = append(ids, key)
+			i := sort.StringSlice(ids).Search(key)
+			if i >= len(ids) || ids[i] != key {
+				ids = append(ids[:i], append([]string{key}, ids[i:]...)...)
+			}
 		})
 	}
 }
 
 func (b *BBS) Query(q string) ([]string, error) {
-	var ids idlist
+	var ids []string
 	err := b.modify("tag:"+q, &ids, nil)
 	return ids, err
 }

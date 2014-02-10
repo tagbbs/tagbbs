@@ -2,11 +2,20 @@ package tagbbs
 
 import (
 	"encoding/json"
+	"errors"
+	"sort"
 	"strconv"
 	"strings"
 
 	"time"
 )
+
+var (
+	ErrAccessDenied = errors.New("Access Denied")
+	ErrUserExisted  = errors.New("User Already Existed")
+)
+
+var RootUser = "sysop"
 
 type BBS struct {
 	store Storage
@@ -18,17 +27,25 @@ func NewBBS(store Storage) *BBS {
 	return b
 }
 
-func (b *BBS) Get(key string) (Post, error) {
-	// TODO: Permission checking
-	return b.store.Get(key)
+func (b *BBS) Get(key string, user string) (Post, error) {
+	p, err := b.store.Get(key)
+	if err != nil {
+		return Post{}, err
+	}
+	if !b.allow(key, p, user, false) {
+		return Post{}, ErrAccessDenied
+	}
+	return p, err
 }
 
-func (b *BBS) Put(key string, post Post) error {
-	// TODO: Permission checking
+func (b *BBS) Put(key string, post Post, user string) error {
 	post.Timestamp = time.Now()
 	oldpost, err := b.store.Get(key)
 	if err != nil {
 		return err
+	}
+	if !b.allow(key, oldpost, user, true) {
+		return ErrAccessDenied
 	}
 	if err := b.store.Put(key, post); err != nil {
 		return err
@@ -42,6 +59,40 @@ func (b *BBS) Put(key string, post Post) error {
 
 func (b *BBS) meta(key string, value interface{}, mutate func(v interface{})) error {
 	return b.modify("bbs:"+key, value, mutate)
+}
+
+func (b *BBS) allow(key string, post Post, user string, write bool) bool {
+	if user == RootUser {
+		return true
+	}
+
+	users := []string{}
+	check(b.meta("users", &users, nil))
+	if i := sort.StringSlice(users).Search(user); i == len(users) || users[i] != user {
+		return false
+	}
+
+	// deal with post
+	if strings.HasPrefix(key, "post:") {
+		if !write {
+			return true
+		} else {
+			// new post
+			if post.Rev == 0 {
+				return true
+			}
+			fm := post.FrontMatter()
+			if fm != nil {
+				for _, a := range fm.Authors {
+					if a == user {
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	return false
 }
 
 func (b *BBS) modify(key string, value interface{}, mutate func(v interface{})) error {
@@ -87,6 +138,25 @@ func (b *BBS) NewPostKey() string {
 		nextid++
 	}))
 	return key
+}
+
+func (b *BBS) NewUser(user string) error {
+	var (
+		users []string
+		err   error
+	)
+
+	if err2 := b.meta("users", &users, func(v interface{}) {
+		if i := sort.StringSlice(users).Search(user); i < len(users) && users[i] == user {
+			err = ErrUserExisted
+		} else {
+			users = append(users[:i], append([]string{user}, users[i:]...)...)
+		}
+	}); err2 != nil {
+		return err2
+	}
+
+	return err
 }
 
 func (b *BBS) init() {

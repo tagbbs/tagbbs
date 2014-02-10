@@ -1,9 +1,6 @@
 package tagbbs
 
-import (
-	"log"
-	"strings"
-)
+import "strings"
 
 type MemStore map[string]Post
 
@@ -15,7 +12,6 @@ func (b MemStore) Get(key string) (Post, error) {
 func (m MemStore) Put(key string, np Post) error {
 	post := m[key]
 	if post.Rev+1 != np.Rev {
-		log.Println(post.Rev, np.Rev)
 		return ErrRevNotMatch
 	}
 	m[key] = np

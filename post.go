@@ -2,6 +2,7 @@ package tagbbs
 
 import (
 	"bytes"
+	"fmt"
 	"time"
 
 	"launchpad.net/goyaml"
@@ -50,4 +51,8 @@ func (p *Post) FrontMatter() *FrontMatter {
 func (p *Post) Body() []byte {
 	_, body := p.sep()
 	return body
+}
+
+func (p *Post) String() string {
+	return fmt.Sprintf("%d %v %s", p.Rev, p.Timestamp, string(p.Content))
 }
