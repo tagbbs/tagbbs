@@ -12,7 +12,7 @@ import (
 
 var (
 	ErrAccessDenied = errors.New("Access Denied")
-	ErrUserExisted  = errors.New("User Already Existed")
+	ErrUserExists   = errors.New("User Exists")
 )
 
 var RootUser = "sysop"
@@ -39,7 +39,6 @@ func (b *BBS) Get(key string, user string) (Post, error) {
 }
 
 func (b *BBS) Put(key string, post Post, user string) error {
-	post.Timestamp = time.Now()
 	oldpost, err := b.store.Get(key)
 	if err != nil {
 		return err
@@ -57,10 +56,7 @@ func (b *BBS) Put(key string, post Post, user string) error {
 	return nil
 }
 
-func (b *BBS) meta(key string, value interface{}, mutate func(v interface{})) error {
-	return b.modify("bbs:"+key, value, mutate)
-}
-
+// allow checks if the user if able to read or write.
 func (b *BBS) allow(key string, post Post, user string, write bool) bool {
 	if user == RootUser {
 		return true
@@ -73,7 +69,7 @@ func (b *BBS) allow(key string, post Post, user string, write bool) bool {
 	}
 
 	// deal with post
-	if strings.HasPrefix(key, "post:") {
+	if strings.HasPrefix(key, "post:") || strings.HasPrefix(key, "user:") {
 		if !write {
 			return true
 		} else {
@@ -92,9 +88,22 @@ func (b *BBS) allow(key string, post Post, user string, write bool) bool {
 		}
 	}
 
+	// special case
+	// always allow user to modify his profile
+	if key == "user:"+user {
+		return true
+	}
+
 	return false
 }
 
+// meta is modify with "bbs:" prefixed key.
+func (b *BBS) meta(key string, value interface{}, mutate func(v interface{})) error {
+	return b.modify("bbs:"+key, value, mutate)
+}
+
+// modify can fetch the value of the key, optionally update it.
+// if the update failed, mutate will be applied again.
 func (b *BBS) modify(key string, value interface{}, mutate func(v interface{})) error {
 begin:
 	// read value
@@ -148,7 +157,7 @@ func (b *BBS) NewUser(user string) error {
 
 	if err2 := b.meta("users", &users, func(v interface{}) {
 		if i := sort.StringSlice(users).Search(user); i < len(users) && users[i] == user {
-			err = ErrUserExisted
+			err = ErrUserExists
 		} else {
 			users = append(users[:i], append([]string{user}, users[i:]...)...)
 		}
@@ -164,7 +173,7 @@ func (b *BBS) init() {
 		nextid int64
 		name   string
 	)
-	check(b.meta("nextid", &nextid, func(v interface{}) {}))
+	check(b.meta("nextid", &nextid, nil))
 	check(b.meta("name", &name, func(v interface{}) {
 		if len(name) == 0 {
 			name = "newbbs"

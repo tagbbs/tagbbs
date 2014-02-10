@@ -1,6 +1,6 @@
 package tagbbs
 
-import "strings"
+import "time"
 
 type MemStore map[string]Post
 
@@ -14,15 +14,8 @@ func (m MemStore) Put(key string, np Post) error {
 	if post.Rev+1 != np.Rev {
 		return ErrRevNotMatch
 	}
-	m[key] = np
-	return nil
-}
+	np.Timestamp = time.Now()
 
-func (m MemStore) Enumerate(prefix string, pp func(Post)) error {
-	for k, v := range m {
-		if strings.HasPrefix(k, prefix) {
-			pp(v)
-		}
-	}
+	m[key] = np
 	return nil
 }
