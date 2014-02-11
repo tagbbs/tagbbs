@@ -3,6 +3,7 @@ package tagbbs
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,7 +16,7 @@ var (
 	ErrUserExists   = errors.New("User Exists")
 )
 
-var RootUser = "sysop"
+var SuperUser = "sysop"
 
 type BBS struct {
 	store Storage
@@ -58,7 +59,7 @@ func (b *BBS) Put(key string, post Post, user string) error {
 
 // allow checks if the user if able to read or write.
 func (b *BBS) allow(key string, post Post, user string, write bool) bool {
-	if user == RootUser {
+	if user == SuperUser {
 		return true
 	}
 
@@ -69,14 +70,36 @@ func (b *BBS) allow(key string, post Post, user string, write bool) bool {
 	}
 
 	// deal with post
-	if strings.HasPrefix(key, "post:") || strings.HasPrefix(key, "user:") {
+	parts := strings.Split(key, ":")
+	if len(parts) < 2 {
+		return false
+	}
+
+	switch parts[0] {
+	case "post", "user":
+		// always allow read
 		if !write {
 			return true
-		} else {
-			// new post
-			if post.Rev == 0 {
-				return true
+		}
+
+		// new post
+		if post.Rev == 0 {
+			switch parts[0] {
+			case "post":
+				// check nextid
+				var nextid int64
+				b.meta("nextid", &nextid, nil)
+				postid, err := strconv.ParseInt(parts[1], 16, 64)
+				if err != nil {
+					log.Println(err)
+					return false
+				}
+				return postid < nextid
+			case "user":
+				return parts[1] == user
 			}
+		} else {
+			// old post, check if in authors list
 			fm := post.FrontMatter()
 			if fm != nil {
 				for _, a := range fm.Authors {
@@ -98,13 +121,13 @@ func (b *BBS) allow(key string, post Post, user string, write bool) bool {
 }
 
 // meta is modify with "bbs:" prefixed key.
-func (b *BBS) meta(key string, value interface{}, mutate func(v interface{})) error {
+func (b *BBS) meta(key string, value interface{}, mutate func(v interface{}) bool) error {
 	return b.modify("bbs:"+key, value, mutate)
 }
 
 // modify can fetch the value of the key, optionally update it.
 // if the update failed, mutate will be applied again.
-func (b *BBS) modify(key string, value interface{}, mutate func(v interface{})) error {
+func (b *BBS) modify(key string, value interface{}, mutate func(v interface{}) bool) error {
 begin:
 	// read value
 	p, err := b.store.Get(key)
@@ -118,10 +141,9 @@ begin:
 	}
 
 	// mutate value
-	if mutate == nil {
+	if mutate == nil || !mutate(value) {
 		return nil
 	}
-	mutate(value)
 
 	// write value
 	if p.Content, err = json.Marshal(value); err != nil {
@@ -142,9 +164,10 @@ func (b *BBS) NewPostKey() string {
 		nextid int64
 		key    string
 	)
-	check(b.meta("nextid", &nextid, func(v interface{}) {
+	check(b.meta("nextid", &nextid, func(v interface{}) bool {
 		key = "post:" + strconv.FormatInt(nextid, 16)
 		nextid++
+		return true
 	}))
 	return key
 }
@@ -155,11 +178,13 @@ func (b *BBS) NewUser(user string) error {
 		err   error
 	)
 
-	if err2 := b.meta("users", &users, func(v interface{}) {
+	if err2 := b.meta("users", &users, func(v interface{}) bool {
 		if i := sort.StringSlice(users).Search(user); i < len(users) && users[i] == user {
 			err = ErrUserExists
+			return false
 		} else {
 			users = append(users[:i], append([]string{user}, users[i:]...)...)
+			return true
 		}
 	}); err2 != nil {
 		return err2
@@ -168,16 +193,35 @@ func (b *BBS) NewUser(user string) error {
 	return err
 }
 
+func (b *BBS) SetUserPass(user, pass string) error {
+	var phrase string
+	return b.modify("userpass:"+user, &phrase, func(v interface{}) bool {
+		phrase = passhash(user, pass)
+		return true
+	})
+}
+
+func (b *BBS) Auth(user, pass string) bool {
+	var phrase string
+	if err := b.modify("userpass:"+user, &phrase, nil); err != nil {
+		log.Println("Error authenticating:", err)
+		return false
+	}
+	return len(phrase) == 0 || passhash(user, pass) == phrase
+}
+
 func (b *BBS) init() {
 	var (
 		nextid int64
 		name   string
 	)
 	check(b.meta("nextid", &nextid, nil))
-	check(b.meta("name", &name, func(v interface{}) {
+	check(b.meta("name", &name, func(v interface{}) bool {
 		if len(name) == 0 {
 			name = "newbbs"
+			return true
 		}
+		return false
 	}))
 }
 

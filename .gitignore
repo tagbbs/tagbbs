@@ -20,3 +20,7 @@ _cgo_export.*
 _testmain.go
 
 *.exe
+
+# Private Keys
+id_rsa
+id_rsa.pub

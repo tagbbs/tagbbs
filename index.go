@@ -9,13 +9,16 @@ func (b *BBS) indexRemove(key string, p Post) {
 	if fm == nil {
 		return
 	}
-	for _, tag := range fm.Tags {
+	tags := []string{""}
+	tags = append(tags, fm.Tags...)
+	for _, tag := range tags {
 		var ids []string
-		b.modify("tag:"+tag, &ids, func(v interface{}) {
+		b.modify("tag:"+tag, &ids, func(v interface{}) bool {
 			i := sort.StringSlice(ids).Search(key)
 			if i < len(ids) && ids[i] == key {
 				ids = append(ids[:i], ids[i+1:]...)
 			}
+			return true
 		})
 	}
 }
@@ -25,13 +28,16 @@ func (b *BBS) indexAdd(key string, p Post) {
 	if fm == nil {
 		return
 	}
-	for _, tag := range fm.Tags {
+	tags := []string{""}
+	tags = append(tags, fm.Tags...)
+	for _, tag := range tags {
 		var ids []string
-		b.modify("tag:"+tag, &ids, func(v interface{}) {
+		b.modify("tag:"+tag, &ids, func(v interface{}) bool {
 			i := sort.StringSlice(ids).Search(key)
 			if i >= len(ids) || ids[i] != key {
 				ids = append(ids[:i], append([]string{key}, ids[i:]...)...)
 			}
+			return true
 		})
 	}
 }
