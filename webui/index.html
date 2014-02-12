@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html ng-app="TagBBS">
+<title> TagBBS </title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Use CDN as much as possible to make repo slimmer-->
+<link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-route.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/showdown/0.3.1/showdown.min.js"></script>
+
+<link rel="stylesheet" type="text/css" href="tagbbs.css">
+<script src="tagbbs.js"></script>
+
+<body>
+<div ng-controller="MainCtrl">
+    <a href="#/login">Login</a> |
+    <a href="#/logout">Logout</a> |
+    <a href="#/list">List</a> |
+    <a href="#/show">Show</a> |
+    <a href="#/put">Put</a>
+    <div ng-view></div>
+    <hr />
+</div>
+
+
+<script type="text/ng-template" id="login.html">
+<form ng-submit="submit()">
+    <div ng-model="message"></div>
+    <input type="text" ng-model="user">
+    <input type="password" ng-model="pass">
+    <button type="submit">Login</button>
+</form>
+</script>
+
+<script type="text/ng-template" id="logout.html">
+<div>{{error}}</div>
+</script>
+
+<script type="text/ng-template" id="list.html">
+<input type="text" ng-model="query">
+<div ng-hide="posts">Empty.</div>
+<ul ng-show="posts">
+    <li ng-repeat="post in posts"><a href="#show/{{post.key}}">{{post.title}}</a></li>
+</ul>
+</script>
+
+<script type="text/ng-template" id="show.html">
+<div class="post">
+<input type="text" ng-model="key">
+<a href="#/put/{{key}}">Edit</a>
+<hr>
+{{error}}
+<post ng-model="content"></post>
+</script>
+
+<script type="text/ng-template" id="put.html">
+<div>{{error}}</div>
+<form ng-submit="submit()">
+    <input type="text" ng-model="key"> <br>
+    <textarea ng-model="content"></textarea> <br>
+    <button type="submit">Submit</button>
+</form>
+</script>
+
+</body>
+</html>

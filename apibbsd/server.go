@@ -63,14 +63,61 @@ func who(api, user string, params url.Values) (interface{}, error) {
 }
 
 func list(api, user string, params url.Values) (interface{}, error) {
-	ids, err := bbs.Query(params.Get("tag"))
-	return ids, err
+	ids, err := bbs.Query(params.Get("query"))
+	if err != nil {
+		return nil, err
+	}
+	r := V{}
+	for _, id := range ids {
+		post, _ := bbs.Get(id, user)
+		fm := post.FrontMatter()
+		if fm == nil {
+			continue
+		}
+		r = append(r, M{
+			"key":     id,
+			"title":   fm.Title,
+			"authors": fm.Authors,
+			"tags":    fm.Tags,
+		})
+	}
+	return r, err
 }
 
 func get(api, user string, params url.Values) (interface{}, error) {
 	key := params.Get("key")
 	post, err := bbs.Get(key, user)
-	return post, err
+	if err != nil {
+		return nil, err
+	}
+	return M{
+		"rev":       post.Rev,
+		"timestamp": post.Timestamp,
+		"content":   string(post.Content),
+	}, nil
+}
+
+func put(api, user string, params url.Values) (interface{}, error) {
+	var (
+		err  error
+		post tagbbs.Post
+	)
+
+	key := params.Get("key")
+	if len(key) == 0 {
+		key = bbs.NewPostKey()
+	} else if post, err = bbs.Get(key, user); err != nil {
+		return nil, err
+	}
+
+	post.Rev++
+	post.Content = []byte(params.Get("content"))
+	err = bbs.Put(key, post, user)
+	if err == nil {
+		return key, nil
+	} else {
+		return nil, err
+	}
 }
 
 func api(handler apiHandler) func(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +125,8 @@ func api(handler apiHandler) func(w http.ResponseWriter, r *http.Request) {
 		// Allow CORS
 		if r.Method == "OPTIONS" {
 			w.Header().Add("Access-Control-Allow-Origin", "*")
-			w.Header().Add("Access-Control-Allow-Methods", "GET, POST")
+			w.Header().Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
 			w.Header().Add("Access-Control-Max-Age", "86400")
 			return
 		}
@@ -89,6 +137,7 @@ func api(handler apiHandler) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		w.Header().Add("Access-Control-Allow-Origin", "*")
 		r.ParseForm()
 		log.Println(r.URL.Path, r.Form)
 
@@ -157,5 +206,6 @@ func main() {
 	http.HandleFunc("/who", api(who))
 	http.HandleFunc("/list", api(list))
 	http.HandleFunc("/get", api(get))
+	http.HandleFunc("/put", api(put))
 	panic(http.ListenAndServe(*flagListen, nil))
 }
