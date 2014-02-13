@@ -79,7 +79,7 @@ Hello World!
 	// Remove
 	p1.Rev++
 	p1.Content = []byte("")
-	if err := b.Put(p1key, p1, RootUser); err != nil {
+	if err := b.Put(p1key, p1, SuperUser); err != nil {
 		t.Fatal(err)
 	}
 
