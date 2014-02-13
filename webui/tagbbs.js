@@ -224,5 +224,5 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         }
     };
 })
-.value("serviceEndpoint", "http://localhost:8023")
+.value("serviceEndpoint", location.protocol + "//" + location.hostname + ":8023")
 ;
