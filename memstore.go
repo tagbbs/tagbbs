@@ -6,6 +6,9 @@ type MemStore map[string]Post
 
 func (b MemStore) Get(key string) (Post, error) {
 	p := b[key]
+	content := make([]byte, len(p.Content))
+	copy(content, p.Content)
+	p.Content = content
 	return p, nil
 }
 
