@@ -4,16 +4,22 @@ import "sort"
 
 type SortedString []string
 
-func (s SortedString) Len() int      { return len(s) }
-func (s SortedString) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s SortedString) Less(i, j int) bool {
-	if len(s[i]) == len(s[j]) {
-		return s[i] < s[j]
+func strcmp(a, b string) bool {
+	if len(a) == len(b) {
+		return a < b
 	}
-	return len(s[i]) < len(s[j])
+	return len(a) < len(b)
+
 }
+
+func (s SortedString) Len() int           { return len(s) }
+func (s SortedString) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s SortedString) Less(i, j int) bool { return strcmp(s[i], s[j]) }
 func (s SortedString) Sort() {
 	sort.Sort(s)
+}
+func (s SortedString) Search(v string) int {
+	return sort.Search(len(s), func(i int) bool { return !strcmp(s[i], v) })
 }
 func (s *SortedString) Unique() {
 	i := 0
@@ -26,7 +32,7 @@ func (s *SortedString) Unique() {
 	(*s) = (*s)[:i+1]
 }
 func (s *SortedString) Insert(val string) bool {
-	if i := sort.StringSlice(*s).Search(val); i < len(*s) && (*s)[i] == val {
+	if i := s.Search(val); i < len(*s) && (*s)[i] == val {
 		return false
 	} else {
 		*s = append((*s)[:i], append([]string{val}, (*s)[i:]...)...)
@@ -34,7 +40,7 @@ func (s *SortedString) Insert(val string) bool {
 	}
 }
 func (s *SortedString) Delete(val string) bool {
-	if i := sort.StringSlice(*s).Search(val); i < len(*s) && (*s)[i] == val {
+	if i := s.Search(val); i < len(*s) && (*s)[i] == val {
 		*s = append((*s)[:i], (*s)[i+1:]...)
 		return true
 	} else {
