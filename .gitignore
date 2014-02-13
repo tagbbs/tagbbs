@@ -24,3 +24,6 @@ _testmain.go
 # Private Keys
 id_rsa
 id_rsa.pub
+
+# Releases
+release/*
