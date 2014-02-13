@@ -30,20 +30,44 @@ TagBBS.config(function($routeProvider, $locationProvider) {
 
     $locationProvider.html5Mode(false);
 })
-.controller("MainCtrl", function($scope, $http) {
+.controller("MainCtrl", function($scope, $location, bbs) {
+    if (!bbs.session()) {
+        localStorage.returnPath = $location.path();
+        $location.path("/login");
+    }
 })
 .controller("Login", function($scope, $location, bbs) {
     $scope.user = "";
     $scope.pass = "";
     $scope.message = "";
+    var redirect = function(d) {
+        if (d.result) {
+            if (localStorage.returnPath) {
+                $location.path(localStorage.returnPath);
+                localStorage.returnPath = "";
+            } else {
+                $location.path("/list");
+            }
+        }
+    }
     $scope.submit = function() {
         bbs.login($scope.user, $scope.pass).success(function(d) {
             if (d.result) {
-                $location.path("/list");
+                localStorage.sid = d.result;
             } else {
-                $scope.message = d.error;
+                $scope.message = "Login failed: " + d.error;
             }
-        });
+        }).success(redirect);
+    };
+
+    if (localStorage.sid) {
+        $scope.message = "Existing session detected, checking...";
+        bbs.session(localStorage.sid);
+        bbs.who().success(function(d) {
+            if (d.error) {
+                $scope.message = "Existing session not valid: " + d.error;
+            }
+        }).success(redirect);
     }
 })
 .controller("Logout", function($scope, $location, bbs) {
@@ -52,6 +76,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         if (d.error) {
             $scope.error = d.error;
         } else {
+            localStorage.sid = "";
             $location.path('/login');
         }
     });
@@ -60,7 +85,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
 
 })
 .controller("List", function($scope, $routeParams, bbs) {
-    $scope.query = "";
+    $scope.query = $routeParams.query || "";
     $scope.posts = [];
     $scope.$watch("query", function(q) {
         bbs.list($scope.query).success(function(d) {
@@ -108,10 +133,30 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         if (trimmed.substring(0, 4) == "---\n") {
             var headerEnd = trimmed.indexOf("\n---\n");
             if (headerEnd > 0) {
-                headerEnd = headerEnd + 5;
                 var header = trimmed.substring(0, headerEnd);
-                var body = trimmed.substring(headerEnd);
-                source = "<pre>\n" + header + "</pre>\n" + body;
+                var body = trimmed.substring(headerEnd + 5);
+                try {
+                    var h = jsyaml.safeLoad(header);
+                    var r = "#" + h.title + "\n";
+                    if (h.tags) {
+                        r += "in: "
+                        for (var i in h.tags) {
+                            var tag = h.tags[i];
+                            if (i > 0) r += ", ";
+                            r += "[" + tag + "](#list/" + tag + ")"
+                        }
+                        r += "\n\n";
+                    }
+                    r += "* * *\n\n";
+                    r += body;
+                    r += "* * *\n\n";
+                    if (h.authors) r += "editable by: " + h.authors.join(", ") + "\n\n";
+
+                    source = r;
+                } catch (e) {
+                    console.log(e);
+                    source = "<pre>\n" + header + "</pre>\n" + body;
+                }
             }
         }
 
