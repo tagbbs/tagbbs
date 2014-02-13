@@ -51,8 +51,7 @@ func (b *BBS) Put(key string, post Post, user string) error {
 		return err
 	}
 	if strings.HasPrefix(key, "post:") {
-		b.indexRemove(key, oldpost)
-		b.indexAdd(key, post)
+		b.indexReplace(key, oldpost, post)
 	}
 	return nil
 }
@@ -174,18 +173,16 @@ func (b *BBS) NewPostKey() string {
 
 func (b *BBS) NewUser(user string) error {
 	var (
-		users []string
+		users = &SortedString{}
 		err   error
 	)
 
-	if err2 := b.meta("users", &users, func(v interface{}) bool {
-		if i := sort.StringSlice(users).Search(user); i < len(users) && users[i] == user {
+	if err2 := b.meta("users", users, func(v interface{}) bool {
+		ok := users.Insert(user)
+		if !ok {
 			err = ErrUserExists
-			return false
-		} else {
-			users = append(users[:i], append([]string{user}, users[i:]...)...)
-			return true
 		}
+		return ok
 	}); err2 != nil {
 		return err2
 	}
