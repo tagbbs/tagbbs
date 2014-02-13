@@ -18,6 +18,11 @@ A list of interfaces:
 Key Types
 ---------
 
+User Editable Keys:
+
++ `post:id` are the posts. Readable by
++ `user:*` are user profiles of each user.
+
 System Keys:
 
 + `bbs:*` are the meta data for the BBS.
@@ -26,11 +31,10 @@ System Keys:
     - `bbs:users` is a list of all available users.
 + `userpass:*` are the user password hashes.
 
-User Editable Keys:
+Index Keys:
 
-+ `post:id` are the posts. Readable by
-+ `user:*` are user profiles of each user.
 + `tag:*` are the post lists of every tags.
+
 
 Post
 ----
