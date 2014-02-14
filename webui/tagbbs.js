@@ -95,28 +95,43 @@ TagBBS.config(function($routeProvider, $locationProvider) {
 })
 .controller("Show", function($scope, $routeParams, bbs) {
     $scope.key = $routeParams.key;
-    $scope.revision = 0;
-    $scope.timestamp = null;
-    $scope.content = "";
     $scope.error = "";
+    $scope.post = {};
+    $scope.show_raw = function() {
+        window.open('data:text/plain;charset=utf-8,' + encodeURIComponent($scope.post.content));
+    };
     $scope.$watch("key", function(key) {
         bbs.get(key).success(function(d) {
             $scope.error = d.error;
-
-            var post = d.result || {};
-            $scope.revision = post.rev;
-            $scope.timestamp = post.timestamp;
-            $scope.content = post.content;
+            $scope.post = d.result || {};
         });
     });
 })
 .controller("Put", function($scope, $routeParams, $location, bbs) {
-    $scope.key = $routeParams.key || "";
-    $scope.content = "";
     $scope.error = "";
+    $scope.key = $routeParams.key || "";
+    $scope.rev = 0;
+    if ($scope.key) {
+        $scope.content = "Loading...";
+        bbs.get($scope.key).success(function(d) {
+            $scope.error = d.error;
+            if (d.result) {
+                $scope.rev = d.result.rev;
+                $scope.content = d.result.content;
+            }
+        })
+    } else {
+        $scope.content =
+            "---\n" +
+            "title: \"Your Title\"\n" +
+            "authors: [yourid]\n" +
+            "tags: [test]\n" +
+            "---\n\n" +
+            "Content\n";
+    }
 
     $scope.submit = function() {
-        bbs.put($scope.key, $scope.content).success(function(d) {
+        bbs.put($scope.key, $scope.rev+1, $scope.content).success(function(d) {
             if (d.error) {
                 $scope.error = d.error;
             } else if (d.result) {
@@ -125,9 +140,11 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         })
     };
 })
-.directive("post", function ($compile, $http) {
+.directive("post", function () {
     var markdown = new Showdown.converter();
-    var convert = function(source) {
+    var convert = function(post) {
+        if (!post) return "";
+        var source = post.content;
         if (!source) return "";
         var trimmed = source.trimLeft();
         if (trimmed.substring(0, 4) == "---\n") {
@@ -137,7 +154,9 @@ TagBBS.config(function($routeProvider, $locationProvider) {
                 var body = trimmed.substring(headerEnd + 5);
                 try {
                     var h = jsyaml.safeLoad(header);
-                    var r = "#" + h.title + "\n";
+                    var r = ""
+                    if (h.title) r += "#" + h.title + "\n\n";
+                    r += "rev: " + post.rev + ", " + post.timestamp + "\n\n";
                     if (h.tags) {
                         r += "in: "
                         for (var i in h.tags) {
@@ -147,15 +166,20 @@ TagBBS.config(function($routeProvider, $locationProvider) {
                         }
                         r += "\n\n";
                     }
+                    if (h.authors) {
+                        r += "by: ";
+                        h.authors.forEach(function(a) {
+                            r += "[" + a + "](#show/user:" + a + ")"
+                        });
+                        r += "\n\n";
+                    }
                     r += "* * *\n\n";
-                    r += body;
-                    r += "* * *\n\n";
-                    if (h.authors) r += "editable by: " + h.authors.join(", ") + "\n\n";
+                    r += body + "\n\n";
 
                     source = r;
                 } catch (e) {
                     console.log(e);
-                    source = "<pre>\n" + header + "</pre>\n" + body;
+                    source = "rev: " + post.rev + ", " + post.timestamp + "\n\n" + "<pre>\n" + header + "\n---\n" + "</pre>\n" + body;
                 }
             }
         }
@@ -163,13 +187,33 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         return markdown.makeHtml(source);
     };
     return {
-        restrict: 'E',
+        require: "ngModel",
+        restrict: "E",
         replace: true,
-        link: function (scope, element, attrs) {
-            scope.$watch(attrs.ngModel, function(source) {
-                element.html(convert(source));
+        link: function (scope, element, attrs, ngModel) {
+            scope.$watch(attrs.ngModel, function(post) {
+                element.html(convert(post));
             });
         }
+    };
+})
+.directive("codemirror", function() {
+return {
+        require: "ngModel",
+        restrict: "A",
+        link: function (scope, elm, attrs, ngModel) {
+            var codemirror = CodeMirror.fromTextArea(elm[0])
+            codemirror.on("change", function(mirror) {
+                var newValue = mirror.getValue();
+                if (newValue !== ngModel.$viewValue) {
+                    ngModel.$setViewValue(newValue);
+                    scope.$apply();
+                }
+            });
+            ngModel.$render = function() {
+                codemirror.setValue(ngModel.$viewValue);
+            };
+       }
     };
 })
 .factory("bbs", function($http, serviceEndpoint) {
@@ -212,8 +256,8 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         get: function(key) {
             return api("get", {key: key});
         },
-        put: function(key, content) {
-            return api("put", {key:key, content: content});
+        put: function(key, rev, content) {
+            return api("put", {key:key, rev: rev, content: content});
         },
         session: function(_sid) {
             oldsid = sid;

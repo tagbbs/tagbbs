@@ -4,9 +4,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- Use CDN as much as possible to make repo slimmer-->
 <link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/codemirror/3.21.0/codemirror.min.css">
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-route.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/showdown/0.3.1/showdown.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/3.21.0/codemirror.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/codemirror/3.21.0/mode/markdown/markdown.min.js"></script>
 <script src="http://nodeca.github.io/js-yaml/js/js-yaml.js"></script>
 
 <link rel="stylesheet" type="text/css" href="tagbbs.css">
@@ -20,7 +23,6 @@
     <a href="#/show">Show</a> |
     <a href="#/put">Put</a>
     <div ng-view></div>
-    <hr />
 </div>
 
 
@@ -38,28 +40,30 @@
 </script>
 
 <script type="text/ng-template" id="list.html">
-<input type="text" ng-model="query">
+<input class="form-control" type="text" ng-model="query" placeholder="query (e.g. test)">
 <div ng-hide="posts">Empty.</div>
 <ul ng-show="posts">
-    <li ng-repeat="post in posts"><a href="#show/{{post.key}}">{{post.title}}</a></li>
+    <li ng-repeat="post in posts"><a href="#show/{{post.key}}">[{{post.key}}]{{post.title}}</a></li>
 </ul>
 </script>
 
 <script type="text/ng-template" id="show.html">
 <div class="post">
-<input type="text" ng-model="key">
-<a href="#/put/{{key}}">Edit</a>
-<hr>
+<input class="form-control" type="text" ng-model="key" placeholder="key (e.g. post:1 or user:sysop)">
+<br>
 {{error}}
-<post ng-model="content"></post>
+<post ng-model="post"></post>
+<a class="btn btn-primary" href="#/put/{{key}}">Edit</a>
+<button class="btn btn-default" ng-click="show_raw()" ng-show="post.rev">Show Raw</button>
 </script>
 
 <script type="text/ng-template" id="put.html">
 <div>{{error}}</div>
 <form ng-submit="submit()">
-    <input type="text" ng-model="key"> <br>
-    <textarea ng-model="content"></textarea> <br>
-    <button type="submit">Submit</button>
+    <input class="form-control" type="text" ng-model="key" placeholder="key, leave empty for new post"><br>
+    <textarea codemirror ng-model="content"></textarea> <br>
+    <button class="btn btn-primary" type="submit">Submit</button><br>
+    <span ng-show="rev">rev: {{rev}}</span><br>
 </form>
 </script>
 

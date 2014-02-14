@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -109,8 +110,7 @@ func put(api, user string, params url.Values) (interface{}, error) {
 	} else if post, err = bbs.Get(key, user); err != nil {
 		return nil, err
 	}
-
-	post.Rev++
+	post.Rev, _ = strconv.ParseInt(params.Get("rev"), 10, 64)
 	post.Content = []byte(params.Get("content"))
 	err = bbs.Put(key, post, user)
 	if err == nil {
