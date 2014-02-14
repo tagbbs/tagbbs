@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"io"
 	"log"
@@ -16,6 +17,10 @@ import (
 var (
 	flagDB = flag.String("db", "mysql://bbs:bbs@/bbs?parseTime=true", "connection string")
 	bbs    *tagbbs.BBS
+)
+
+var (
+	ErrDiscarded = errors.New("Discarded")
 )
 
 func bbsinit() {
@@ -169,7 +174,7 @@ func usermain(user string, ch ssh.Channel) {
 				}
 			}
 			term.SetPrompt("")
-			term.Pokay("Type EOF to end the file.")
+			term.Pokay("Type EOF to end the file. Type DISCARD to cancel.")
 			content, err := readutil(serverTerm, "EOF")
 			if err == nil {
 				post.Rev++
@@ -178,6 +183,8 @@ func usermain(user string, ch ssh.Channel) {
 					key = bbs.NewPostKey()
 				}
 				term.PerrorIf(bbs.Put(key, post, user))
+			} else {
+				term.Perror(err)
 			}
 			term.SetPrompt("> ")
 		}
@@ -192,6 +199,10 @@ func readutil(term *ssh.ServerTerminal, until string) (content string, err error
 			return
 		}
 		if line == "EOF" {
+			break
+		} else if line == "DISCARD" {
+			content = ""
+			err = ErrDiscarded
 			break
 		}
 		content += line + "\n"
