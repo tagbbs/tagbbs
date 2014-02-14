@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"io"
 	"log"
 	"strings"
+	"launchpad.net/goyaml"
 
 	"code.google.com/p/go.crypto/ssh"
 	_ "github.com/go-sql-driver/mysql"
@@ -38,6 +40,35 @@ func bbsinit() {
 
 func userauth(user string, password string) bool {
 	return bbs.Auth(user, password)
+}
+
+func userpubkey(user string, algo string, pubkey []byte) bool {
+	type Profile struct {
+		AuthorizedKeys string `yaml:"authorized_keys"`
+	}
+	post, err := bbs.Get("user:"+user, user)
+	if err != nil {
+		return false
+	}
+	profile := Profile{}
+	err = goyaml.Unmarshal(post.Content, &profile)
+	if err != nil {
+		return false
+	}
+	keys := []byte(profile.AuthorizedKeys)
+	for {
+		var (
+			pkey ssh.PublicKey
+			ok   bool
+		)
+		pkey, _, _, keys, ok = ssh.ParseAuthorizedKey(keys)
+		if !ok {
+			return false
+		}
+		if pkey.PublicKeyAlgo() == algo && bytes.Compare(ssh.MarshalPublicKey(pkey), pubkey) == 0 {
+			return true
+		}
+	}
 }
 
 // Replace with custom terminal implementation.

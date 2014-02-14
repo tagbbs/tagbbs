@@ -24,6 +24,9 @@ func main() {
 		PasswordCallback: func(conn *ssh.ServerConn, user, pass string) bool {
 			return userauth(user, pass)
 		},
+		PublicKeyCallback: func(conn *ssh.ServerConn, user, algo string, pubkey []byte) bool {
+			return userpubkey(user, algo, pubkey)
+		},
 	}
 
 	// Load server certificate.
