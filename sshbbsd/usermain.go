@@ -132,7 +132,12 @@ func usermain(user string, ch ssh.Channel) {
 				if fm == nil {
 					continue
 				}
-				term.Printf("%-12s %-40s %v %v\r\n", id, fm.Title, fm.Authors, fm.Tags)
+				paddedTitle := fm.Title
+				width := StringWidth(paddedTitle)
+				if width < 40 {
+					paddedTitle += strings.Repeat(" ", 40-width)
+				}
+				term.Printf("%-12s %s %v %v\r\n", id, paddedTitle, fm.Authors, fm.Tags)
 			}
 			term.PerrorIf(err)
 		case "get":
