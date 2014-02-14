@@ -178,6 +178,7 @@ func (b *BBS) NewUser(user string) error {
 	)
 
 	if err2 := b.meta("users", users, func(v interface{}) bool {
+		users.Sort() // temporary fix
 		ok := users.Insert(user)
 		if !ok {
 			err = ErrUserExists
