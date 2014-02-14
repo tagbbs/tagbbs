@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"strings"
-	"launchpad.net/goyaml"
 
 	"code.google.com/p/go.crypto/ssh"
 	_ "github.com/go-sql-driver/mysql"
@@ -56,7 +55,7 @@ func userpubkey(user string, algo string, pubkey []byte) bool {
 		return false
 	}
 	profile := Profile{}
-	err = goyaml.Unmarshal(post.Content, &profile)
+	err = post.UnmarshalTo(&profile)
 	if err != nil {
 		return false
 	}

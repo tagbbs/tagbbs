@@ -1,7 +1,6 @@
 package tagbbs
 
 import (
-	"bytes"
 	"fmt"
 	"time"
 
@@ -20,37 +19,16 @@ type FrontMatter struct {
 	Authors []string
 }
 
-var separator = []byte("---\n")
-
-func (p *Post) sep() ([]byte, []byte) {
-	con := bytes.TrimLeft(p.Content, "\r\n\t ")
-	frontBegin := bytes.Index(con, separator)
-	if frontBegin != 0 {
-		return nil, con
-	}
-	frontBegin += len(separator)
-	frontLength := bytes.Index(con[frontBegin:], separator)
-	if frontLength < 0 {
-		return nil, con
-	}
-	return con[frontBegin : frontBegin+frontLength], con[frontBegin+frontLength+len(separator):]
-}
-
 func (p *Post) FrontMatter() *FrontMatter {
-	fmb, _ := p.sep()
-	if len(fmb) == 0 {
-		return nil
-	}
 	var fm FrontMatter
-	if err := goyaml.Unmarshal(fmb, &fm); err != nil {
+	if err := goyaml.Unmarshal(p.Content, &fm); err != nil {
 		return nil
 	}
 	return &fm
 }
 
-func (p *Post) Body() []byte {
-	_, body := p.sep()
-	return body
+func (p *Post) UnmarshalTo(v interface{}) error {
+	return goyaml.Unmarshal(p.Content, v)
 }
 
 func (p *Post) String() string {
