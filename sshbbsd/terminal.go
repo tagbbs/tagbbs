@@ -220,7 +220,10 @@ func (t *Terminal) moveCursorToPos(pos int) {
 		return
 	}
 
-	x := len(t.prompt) + pos
+	if pos >= len(t.line) {
+		pos = len(t.line)
+	}
+	x := StringWidth(t.prompt + string(t.line[:pos]))
 	y := x / t.termWidth
 	x = x % t.termWidth
 
@@ -496,16 +499,16 @@ func (t *Terminal) handleKey(key rune) (line string, ok bool) {
 
 func (t *Terminal) writeLine(line []rune) {
 	for len(line) != 0 {
-		remainingOnLine := t.termWidth - t.cursorX
-		todo := len(line)
-		if todo > remainingOnLine {
-			todo = remainingOnLine
+		todo, todoWidth := 0, 0
+		for t.cursorX+todoWidth < t.termWidth && todo < len(line) {
+			t.cursorX += RuneWidth(line[todo])
+			todo++
 		}
 		t.queue(line[:todo])
-		t.cursorX += todo
+		t.cursorX += todoWidth
 		line = line[todo:]
 
-		if t.cursorX == t.termWidth {
+		if t.cursorX >= t.termWidth {
 			t.cursorX = 0
 			t.cursorY++
 			if t.cursorY > t.maxLine {
