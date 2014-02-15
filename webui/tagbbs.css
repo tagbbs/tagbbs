@@ -1,1 +1,135 @@
 .CodeMirror {border: 1px solid gray; font-size:13px}
+
+body {
+  padding-left: 120px;
+  font-family: Monaco, monospace;
+}
+
+aside {
+  margin-left: -120px;
+  left: 120px;
+  width: 120px;
+  background: #000;
+  position: fixed;
+  height: 100%;
+  overflow-y: auto;
+  z-index: 1000;
+  transition: all 0.4s ease 0s;
+}
+
+aside ul.nav {
+  top: 0;
+  width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+aside ul.nav li {
+  line-height: 40px;
+  color: #999999;
+}
+
+aside ul.nav li hr {
+  background-color: #999;
+  border: 0;
+  height: 1px;
+}
+
+aside ul.nav li a {
+  display: block;
+  text-decoration: none;
+  color: #999999;
+}
+
+aside ul.nav li a:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.2);
+  text-decoration: none;
+}
+
+aside ul.nav li a:active,
+aside ul.nav li a:focus {
+  text-decoration: none;
+}
+
+aside ul.nav li h1 {
+  height: 65px;
+  line-height: 60px;
+  font-size: 18px;
+  margin-left: 10px;
+  color: #999999;
+}
+
+aside ul.nav li h1:hover {
+  color: #fff;
+  background: none;
+}
+
+.container {
+  width: 100%;
+  padding: 10px 20px;
+}
+
+.login {
+  width: 400px;
+  margin: 0 auto;
+  padding: 100px;
+}
+
+.query-input {
+  width: 100%;
+  border: none;
+  padding: 0 5px;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.query-input:focus {
+  outline: none;
+}
+
+ul.posts-listing {
+  list-style-type: none;
+  padding: 5px;
+  min-width: 560px;
+}
+
+ul.posts-listing .post-key {
+  display: inline-block;
+  color: gray;
+  font-size: 10px;
+  width: 6em;
+  text-align: right;
+  padding-right: 5px;
+}
+
+ul.posts-listing .post-title {
+  display: inline-block;
+  font-size: 14px;
+  width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+ul.posts-listing .post-author {
+  display: inline-block;
+  margin-left: 10px;
+  color: gray;
+  font-size: 12px;
+  width: 60px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+ul.posts-listing .post-tag {
+  font-size: 10px;
+  margin-left: 5px;
+}
+
+pre.post-source {
+  background: none;
+  border: none;
+}

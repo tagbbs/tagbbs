@@ -1,4 +1,4 @@
-var TagBBS = angular.module("TagBBS", ["ngRoute"]);
+var TagBBS = angular.module("TagBBS", ["ngRoute", "ngProgressLite"]);
 
 TagBBS.config(function($routeProvider, $locationProvider) {
     $routeProvider
@@ -31,10 +31,21 @@ TagBBS.config(function($routeProvider, $locationProvider) {
     $locationProvider.html5Mode(false);
 })
 .controller("MainCtrl", function($scope, $location, bbs) {
+    $scope.user = "";
+    $scope.setUser = function(user) {
+        $scope.user = user;
+    };
     if (!bbs.session()) {
-        localStorage.returnPath = $location.path();
+        if ($location.path() != "/login" && $location.path() != "/logout")
+            localStorage.returnPath = $location.path();
+        else
+            localStorage.returnPath = "";
         $location.path("/login");
     }
+    bbs.version().success(function(d) {
+        $scope.name = d.result.name;
+        $scope.version = d.result.version;
+    });
 })
 .controller("Login", function($scope, $location, bbs) {
     $scope.user = "";
@@ -54,6 +65,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         bbs.login($scope.user, $scope.pass).success(function(d) {
             if (d.result) {
                 localStorage.sid = d.result;
+                $scope.setUser($scope.user);
             } else {
                 $scope.message = "Login failed: " + d.error;
             }
@@ -67,7 +79,10 @@ TagBBS.config(function($routeProvider, $locationProvider) {
             if (d.error) {
                 $scope.message = "Existing session not valid: " + d.error;
             }
-        }).success(redirect);
+        }).success(function(d) {
+            $scope.setUser(d.result);
+            redirect(d);
+        });
     }
 })
 .controller("Logout", function($scope, $location, bbs) {
@@ -77,26 +92,29 @@ TagBBS.config(function($routeProvider, $locationProvider) {
             $scope.error = d.error;
         } else {
             localStorage.sid = "";
-            $location.path('/login');
+            $scope.setUser("");
+            $location.path("/login");
         }
     });
 })
 .controller("Register", function($scope) {
 
 })
-.controller("List", function($scope, $routeParams, bbs) {
+.controller("List", function($scope, $routeParams, $location, bbs) {
     $scope.query = $routeParams.query || "";
     $scope.posts = [];
-    $scope.$watch("query", function(q) {
-        bbs.list($scope.query).success(function(d) {
-            $scope.posts = d.result;
-        })
+    $scope.newQuery = function() {
+        $location.path("/list/" + $scope.query);
+    };
+    bbs.list($scope.query).success(function(d) {
+        $scope.posts = d.result;
     });
 })
 .controller("Show", function($scope, $routeParams, bbs) {
     $scope.key = $routeParams.key;
     $scope.error = "";
     $scope.post = {};
+    $scope.loading = true;
     $scope.show_raw = function() {
         window.open('data:text/plain;charset=utf-8,' + encodeURIComponent($scope.post.content));
     };
@@ -104,6 +122,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         bbs.get(key).success(function(d) {
             $scope.error = d.error;
             $scope.post = d.result || {};
+            $scope.loading = false;
         });
     });
 })
@@ -123,11 +142,11 @@ TagBBS.config(function($routeProvider, $locationProvider) {
     } else {
         $scope.content =
             "---\n" +
-            "title: \"Your Title\"\n" +
-            "authors: [yourid]\n" +
-            "tags: [test]\n" +
+            "title: \"我要饭全站\"\n" +
+            "authors: [" + $scope.user + "]\n" +
+            "tags: [test, 1481]\n" +
             "---\n\n" +
-            "Content\n";
+            "我要饭全站啦！大家快来报名！\n";
     }
 
     $scope.submit = function() {
@@ -140,12 +159,10 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         })
     };
 })
-.directive("post", function () {
+.directive("post", function ($sce) {
     var markdown = new Showdown.converter();
-    var convert = function(post) {
-        if (!post) return "";
-        var source = post.content;
-        if (!source) return "";
+    var sep = function(source) {
+        source = source || "";
         var trimmed = source.trimLeft();
         if (trimmed.substring(0, 4) == "---\n") {
             var headerEnd = trimmed.indexOf("\n---\n");
@@ -153,47 +170,38 @@ TagBBS.config(function($routeProvider, $locationProvider) {
                 var header = trimmed.substring(0, headerEnd);
                 var body = trimmed.substring(headerEnd + 5);
                 try {
-                    var h = jsyaml.safeLoad(header);
-                    var r = ""
-                    if (h.title) r += "#" + h.title + "\n\n";
-                    r += "rev: " + post.rev + ", " + post.timestamp + "\n\n";
-                    if (h.tags) {
-                        r += "in: "
-                        for (var i in h.tags) {
-                            var tag = h.tags[i];
-                            if (i > 0) r += ", ";
-                            r += "[" + tag + "](#list/" + tag + ")"
-                        }
-                        r += "\n\n";
-                    }
-                    if (h.authors) {
-                        r += "by: ";
-                        h.authors.forEach(function(a) {
-                            r += "[" + a + "](#show/user:" + a + ")"
-                        });
-                        r += "\n\n";
-                    }
-                    r += "* * *\n\n";
-                    r += body + "\n\n";
-
-                    source = r;
+                    return {header: jsyaml.safeLoad(header), body: body}
                 } catch (e) {
                     console.log(e);
-                    source = "rev: " + post.rev + ", " + post.timestamp + "\n\n" + "<pre>\n" + header + "\n---\n" + "</pre>\n" + body;
                 }
             }
         }
-
-        return markdown.makeHtml(source);
-    };
+        return {header: null, body: source}
+    }
     return {
         require: "ngModel",
         restrict: "E",
-        replace: true,
+        templateUrl: "post.html",
         link: function (scope, element, attrs, ngModel) {
-            scope.$watch(attrs.ngModel, function(post) {
-                element.html(convert(post));
-            });
+            ngModel.$render = function() {
+                var post = ngModel.$viewValue;
+                scope.rev = post.rev;
+                scope.timestamp = post.timestamp;
+                scope.title = "";
+                scope.tags = [];
+                scope.authors = [];
+                scope.body = "";
+                scope.source = post.content;
+
+                var hb = sep(post.content);
+                if (hb.header) {
+                    scope.title = hb.header.title;
+                    scope.tags = hb.header.tags;
+                    scope.authors = hb.header.authors;
+                    if (hb.header.raw) scope.source = hb.body;
+                    else scope.body = $sce.trustAsHtml(markdown.makeHtml(hb.body));
+                }
+            };
         }
     };
 })
@@ -247,6 +255,9 @@ return {
         logout: function() {
             return api("logout");
         },
+        version: function() {
+            return api("version");
+        },
         who: function() {
             return api("who");
         },
@@ -267,6 +278,42 @@ return {
             return oldsid;
         }
     };
+})
+.config(function($httpProvider) {
+    $httpProvider.interceptors.push(function($q, $timeout, ngProgressLite) {
+        var active = 0;
+        var start = function() {
+            active++;
+            $timeout(function() {
+                if (active > 0) {
+                    ngProgressLite.start();
+                    ngProgressLite.inc();
+                }
+            }, 100);
+        };
+        var finish = function() {
+            active--;
+            $timeout(function() {
+                if (active == 0) {
+                    ngProgressLite.done();
+                }
+            }, 100);
+        };
+        return {
+            'request': function(config) {
+              start()
+              return config || $q.when(config);
+            },
+            'response': function(response) {
+              finish();
+              return response || $q.when(response);
+            },
+           'responseError': function(rejection) {
+              finish();
+              return $q.reject(rejection);
+            }
+        };
+    });
 })
 .value("serviceEndpoint", location.protocol + "//" + location.hostname + ":8023")
 ;
