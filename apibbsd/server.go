@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"sync"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -40,23 +39,12 @@ type M map[string]interface{}
 type apiHandler func(api, user string, params url.Values) (interface{}, error)
 
 func bbsinit() {
-	var (
-		store tagbbs.Storage
-		err   error
-	)
-	parts := strings.SplitN(*flagDB, "://", 2)
-	driver := parts[0]
-	if driver == "mysql" {
-		store, err = tagbbs.NewSQLStore(driver, parts[1], "kvs")
-		if err != nil {
-			panic(err)
-		}
-	} else if driver == "mem" {
-		store = tagbbs.MemStore{}
-	} else {
-		panic("unknown driver: " + driver)
+	store, err := tagbbs.NewStore(*flagDB)
+	if err != nil {
+		panic(err)
 	}
 	bbs = tagbbs.NewBBS(store)
+	log.Println(bbs.Version())
 }
 
 func who(api, user string, params url.Values) (interface{}, error) {
@@ -146,6 +134,13 @@ func api(handler apiHandler) func(w http.ResponseWriter, r *http.Request) {
 			err    error
 		)
 		switch r.URL.Path {
+		case "/version":
+			var name, ver string
+			name, ver, err = bbs.Version()
+			result = M{
+				"name":    name,
+				"version": ver,
+			}
 		case "/login":
 			user, pass := r.Form.Get("user"), r.Form.Get("pass")
 			randbits := make([]byte, 16)
@@ -203,6 +198,7 @@ func main() {
 	log.Println("listening on " + *flagListen)
 	http.HandleFunc("/login", api(nil))
 	http.HandleFunc("/logout", api(nil))
+	http.HandleFunc("/version", api(nil))
 	http.HandleFunc("/who", api(who))
 	http.HandleFunc("/list", api(list))
 	http.HandleFunc("/get", api(get))

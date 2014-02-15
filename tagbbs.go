@@ -16,8 +16,6 @@ var (
 	ErrUserExists   = errors.New("User Exists")
 )
 
-var SuperUser = "sysop"
-
 type BBS struct {
 	store Storage
 }
@@ -54,6 +52,12 @@ func (b *BBS) Put(key string, post Post, user string) error {
 		b.indexReplace(key, oldpost, post)
 	}
 	return nil
+}
+
+func (b *BBS) Version() (string, string, error) {
+	var name string
+	err := b.meta("name", &name, nil)
+	return name, version, err
 }
 
 // allow checks if the user if able to read or write.
@@ -216,46 +220,9 @@ func (b *BBS) init() {
 	check(b.meta("nextid", &nextid, nil))
 	check(b.meta("name", &name, func(v interface{}) bool {
 		if len(name) == 0 {
-			name = "newbbs"
+			name = "TagBBS"
 			return true
 		}
 		return false
 	}))
-}
-
-func (b *BBS) lock(key string) error {
-	key = "_lock:" + key
-begin:
-	p, err := b.store.Get(key)
-	if err != nil {
-		return err
-	}
-	if len(p.Content) != 0 {
-		return ErrAlreadyLocked
-	}
-	p.Rev++
-	p.Content = []byte("!")
-	err = b.store.Put(key, p)
-	if err == ErrRevNotMatch {
-		goto begin
-	} else {
-		return err
-	}
-}
-
-func (b *BBS) unlock(key string) error {
-	key = "_lock:" + key
-begin:
-	p, err := b.store.Get(key)
-	if len(p.Content) == 0 {
-		return ErrNotLocked
-	}
-	p.Rev++
-	p.Content = nil
-	err = b.store.Put(key, p)
-	if err == ErrRevNotMatch {
-		goto begin
-	} else {
-		return err
-	}
 }

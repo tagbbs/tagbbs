@@ -23,23 +23,12 @@ var (
 )
 
 func bbsinit() {
-	var (
-		store tagbbs.Storage
-		err   error
-	)
-	parts := strings.SplitN(*flagDB, "://", 2)
-	driver := parts[0]
-	if driver == "mysql" {
-		store, err = tagbbs.NewSQLStore(driver, parts[1], "kvs")
-		if err != nil {
-			panic(err)
-		}
-	} else if driver == "mem" {
-		store = tagbbs.MemStore{}
-	} else {
-		panic("unknown driver: " + driver)
+	store, err := tagbbs.NewStore(*flagDB)
+	if err != nil {
+		panic(err)
 	}
 	bbs = tagbbs.NewBBS(store)
+	log.Println(bbs.Version())
 }
 
 func userauth(user string, password string) bool {
@@ -96,6 +85,12 @@ func usermain(user string, ch ssh.Channel) {
 	defer ch.Close()
 
 	// real logic here
+	name, version, err := bbs.Version()
+	if err != nil {
+		panic(err)
+	} else {
+		term.Printf("%s: %s\r\n", name, version)
+	}
 	for {
 		line, err := serverTerm.ReadLine()
 		if err == io.EOF {
