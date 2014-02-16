@@ -14,7 +14,6 @@ aside {
   height: 100%;
   overflow-y: auto;
   z-index: 1000;
-  transition: all 0.4s ease 0s;
 }
 
 aside ul.nav {
@@ -28,12 +27,6 @@ aside ul.nav {
 aside ul.nav li {
   line-height: 40px;
   color: #999999;
-}
-
-aside ul.nav li hr {
-  background-color: #999;
-  border: 0;
-  height: 1px;
 }
 
 aside ul.nav li a {
@@ -54,8 +47,6 @@ aside ul.nav li a:focus {
 }
 
 aside ul.nav li h1 {
-  height: 65px;
-  line-height: 60px;
   font-size: 18px;
   margin-left: 10px;
   color: #999999;
@@ -91,7 +82,6 @@ aside ul.nav li h1:hover {
 ul.posts-listing {
   list-style-type: none;
   padding: 5px;
-  min-width: 560px;
 }
 
 ul.posts-listing .post-key {
@@ -131,4 +121,32 @@ ul.posts-listing .post-tag {
 pre.post-source {
   background: none;
   border: none;
+}
+
+@media (max-width: 720px) {
+  body {
+    padding-left: 0px;
+  }
+  aside {
+    position: relative;
+    width: 100%;
+    font-size: 90%;
+  }
+  aside ul.nav li {
+    display: inline-block;
+    line-height: default;
+  }
+  aside ul.nav h1 {
+    display: none;
+  }
+  aside ul.nav li a {
+    padding: 5px 5px;
+  }
+  ul.posts-listing .post-key {
+    display: none;
+  }
+  ul.posts-listing .post-title {
+    width: 150px;
+    word-wrap: break-word;
+  }
 }

@@ -100,7 +100,7 @@ Not yet implemented. Please use SSH instead.
 
 <script type="text/ng-template" id="post.html">
 <h1>{{title}}</h1>
-<div>{{timestamp}}, rev: {{rev}}</div>
+<div>{{timestamp}}, {{key}} rev {{rev}}</div>
 <span ng-show="tags">in: <span ng-repeat="tag in tags"><a href="#/list/{{tag}}">{{tag}}</a> </span></span>
 <span ng-show="authors">by: <span ng-repeat="author in authors"><a href="#/show/user:{{author}}">{{author}}</a> </span></span>
 <hr>
