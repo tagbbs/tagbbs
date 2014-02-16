@@ -21,6 +21,7 @@ do
     tar zcf $NAME-$os-$RELEASE.tgz $NAME-$os-$RELEASE
 done
 
+[ -d tagbbs-webui-$RELEASE ] && rm -rf tagbbs-webui-$RELEASE
 cp -r $ROOT/webui tagbbs-webui-$RELEASE
 ln -sfvn tagbbs-webui-$RELEASE tagbbs-webui
 tar zcf tagbbs-webui-$RELEASE.tgz tagbbs-webui-$RELEASE

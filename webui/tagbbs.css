@@ -13,7 +13,7 @@ aside {
   position: fixed;
   height: 100%;
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 99;
 }
 
 aside ul.nav {
@@ -124,14 +124,16 @@ pre.post-source {
   border: none;
 }
 
-@media all and (orientation: portrait), all and (max-width: 720px) and (max-height: 720px) {
+@media all and (orientation: portrait), all and (max-width: 720px) {
   body {
     padding-left: 0px;
+    padding-top: 50px;
   }
   aside {
-    position: relative;
     width: 100%;
     font-size: 90%;
+    height: 50px;
+    margin-top: -50px;
   }
   aside ul.nav li {
     display: inline-block;
@@ -151,7 +153,15 @@ pre.post-source {
   }
 }
 
-@media all and (orientation: portrait) and (max-width: 720px) {
+@media all and (orientation: portrait) and (max-width: 720px), all and (max-width: 480px) {
+  body {
+    padding-top: 0px;
+  }
+  aside {
+    position: static;
+    margin-top: 0px;
+    margin-left: 0px;
+  }
   ul.posts-listing .post-title {
     width: 60%;
   }

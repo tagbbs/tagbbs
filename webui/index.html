@@ -66,7 +66,7 @@ Not yet implemented. Please use SSH instead.
 
 <script type="text/ng-template" id="list.html">
 <form ng-submit="newQuery()">
-<input class="query-input" type="text" ng-model="query" placeholder="query (e.g. test)">
+<input class="query-input" type="text" ng-model="query" placeholder="all">
 </form>
 <ul class="posts-listing">
     <li ng-repeat="post in posts">
@@ -80,7 +80,7 @@ Not yet implemented. Please use SSH instead.
 </script>
 
 <script type="text/ng-template" id="show.html">
-<div class="alert alert-danger" ng-show="error">{{error}}</div>
+<div class="alert alert-danger" ng-if="error">{{error}}</div>
 <post ng-model="post" ng-if="post.rev"></post>
 <div class="alert alert-warning" ng-hide="post.rev || loading"> No Content </div>
 <hr>
@@ -89,7 +89,7 @@ Not yet implemented. Please use SSH instead.
 </script>
 
 <script type="text/ng-template" id="put.html">
-<div>{{error}}</div>
+<div class="alert alert-danger" ng-if="error">{{error}}</div>
 <form ng-submit="submit()">
     <input class="query-input" type="text" ng-model="key" placeholder="new post"><br>
     <textarea class="form-control" rows="15" codemirror ng-model="content"></textarea> <br>
