@@ -2,7 +2,7 @@
 <html ng-app="TagBBS" ng-controller="MainCtrl">
 <meta charset="utf-8">
 <title ng-bind="name"></title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <!-- Use CDN as much as possible to make repo slimmer-->
 <!-- CSS Framework -->
 <link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
@@ -85,15 +85,15 @@ Not yet implemented. Please use SSH instead.
 <div class="alert alert-warning" ng-hide="post.rev || loading"> No Content </div>
 <hr>
 <a class="btn btn-primary" href="#/put/{{key}}" title="Edit"><span class="glyphicon glyphicon-edit"></span> Edit</a>
-<button class="btn btn-default" ng-click="show_raw()" ng-if="post.rev" title="Show Raw"><span class="glyphicon glyphicon-new-window"></span> Raw</button>
+<button class="btn btn-default" ng-click="show_raw()" ng-if="post.rev" title="Show Raw"><span class="glyphicon glyphicon-new-window"></span> Source</button>
 </script>
 
 <script type="text/ng-template" id="put.html">
 <div>{{error}}</div>
 <form ng-submit="submit()">
     <input class="query-input" type="text" ng-model="key" placeholder="new post"><br>
-    <textarea codemirror ng-model="content"></textarea> <br>
-    <button class="btn btn-primary" type="submit"><span class="glyphicon glyphicon-floppy-disk"></span> Save</button>
+    <textarea class="form-control" rows="15" codemirror ng-model="content"></textarea> <br>
+    <button class="btn btn-primary" type="submit"><span class="glyphicon glyphicon-floppy-disk"></span> Commit</button>
     <span ng-show="rev">rev: {{rev}}</span><br>
 </form>
 </script>

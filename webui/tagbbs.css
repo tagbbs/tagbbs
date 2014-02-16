@@ -96,7 +96,8 @@ ul.posts-listing .post-key {
 ul.posts-listing .post-title {
   display: inline-block;
   font-size: 14px;
-  width: 200px;
+  width: 50%;
+  max-width: 300px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -123,7 +124,7 @@ pre.post-source {
   border: none;
 }
 
-@media (max-width: 720px) {
+@media all and (orientation: portrait), all and (max-width: 720px) and (max-height: 720px) {
   body {
     padding-left: 0px;
   }
@@ -146,7 +147,15 @@ pre.post-source {
     display: none;
   }
   ul.posts-listing .post-title {
-    width: 150px;
     word-wrap: break-word;
+  }
+}
+
+@media all and (orientation: portrait) and (max-width: 720px) {
+  ul.posts-listing .post-title {
+    width: 60%;
+  }
+  ul.posts-listing .post-tag {
+    display: none;
   }
 }

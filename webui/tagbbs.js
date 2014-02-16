@@ -205,11 +205,13 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         }
     };
 })
-.directive("codemirror", function() {
+.directive("codemirror", function(isMobile) {
 return {
         require: "ngModel",
         restrict: "A",
         link: function (scope, elm, attrs, ngModel) {
+            // Disable codemirror for mobile. The touch interface does not seem play well with it.
+            if (isMobile.any()) return;
             var codemirror = CodeMirror.fromTextArea(elm[0])
             codemirror.on("change", function(mirror) {
                 var newValue = mirror.getValue();
@@ -316,4 +318,28 @@ return {
     });
 })
 .value("serviceEndpoint", location.protocol + "//" + location.hostname + ":8023")
+.factory("isMobile", function() {
+    var isMobile = {
+        Android: function() {
+            return navigator.userAgent.match(/Android/i);
+        },
+        BlackBerry: function() {
+            return navigator.userAgent.match(/BlackBerry/i);
+        },
+        iOS: function() {
+            return navigator.userAgent.match(/iPhone|iPad|iPod/i);
+        },
+        Opera: function() {
+            return navigator.userAgent.match(/Opera Mini/i);
+        },
+        Windows: function() {
+            return navigator.userAgent.match(/IEMobile/i);
+        },
+        any: function() {
+            console.log(navigator.userAgent)
+            return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iOS() || isMobile.Opera() || isMobile.Windows());
+        }
+    };
+    return isMobile;
+})
 ;
