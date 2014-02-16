@@ -18,7 +18,9 @@ do
     GOOS=$os go build -ldflags "-X github.com/thinxer/tagbbs.version $RELEASE" github.com/thinxer/tagbbs/sshbbsd
     cd ..
     ln -sfvn $NAME-$os-$RELEASE $NAME-$os
+    tar zcf $NAME-$os-$RELEASE.tgz $NAME-$os-$RELEASE
 done
 
 cp -r $ROOT/webui tagbbs-webui-$RELEASE
 ln -sfvn tagbbs-webui-$RELEASE tagbbs-webui
+tar zcf tagbbs-webui-$RELEASE.tgz tagbbs-webui-$RELEASE
