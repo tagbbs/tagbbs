@@ -21,6 +21,10 @@ func (s SortedString) Sort() {
 func (s SortedString) Search(v string) int {
 	return sort.Search(len(s), func(i int) bool { return !strcmp(s[i], v) })
 }
+func (s SortedString) Contain(v string) bool {
+	i := s.Search(v)
+	return i < len(s) && s[i] == v
+}
 func (s *SortedString) Unique() {
 	i := 0
 	for j := 1; j < len(*s); j++ {

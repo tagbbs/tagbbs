@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -66,9 +65,9 @@ func (b *BBS) allow(key string, post Post, user string, write bool) bool {
 		return true
 	}
 
-	users := []string{}
+	users := &SortedString{}
 	check(b.meta("users", &users, nil))
-	if i := sort.StringSlice(users).Search(user); i == len(users) || users[i] != user {
+	if !users.Contain(user) {
 		return false
 	}
 
