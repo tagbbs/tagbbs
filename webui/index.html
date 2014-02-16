@@ -27,14 +27,14 @@
 <body>
 <aside>
     <ul class="nav">
-        <li><h1 title="server build: {{version}}">{{name}}</h1></li>
-        <li><a href="#/list">List</a></li>
-        <li><a href="#/put">Put</a></li>
+        <li><h1 title="server build: {{version}}"><span class="glyphicon glyphicon-home"></span> {{name}}</h1></li>
+        <li><a href="#/list"><span class="glyphicon glyphicon-th-list"></span> List</a></li>
+        <li><a href="#/put"><span class="glyphicon glyphicon-file"></span> Put</a></li>
         <li>&nbsp;</li>
-        <li ng-hide="user"><a href="#/login">Login</a></li>
-        <li ng-hide="user"><a href="#/register">Register</a></li>
-        <li ng-show="user"><a href="#/show/user:{{user}}" title="my profile">{{user}}</a>
-        <li ng-show="user"><a href="#/logout">Logout</a></li>
+        <li ng-hide="user"><a href="#/login"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+        <li ng-hide="user"><a href="#/register"> Register</a></li>
+        <li ng-show="user"><a href="#/show/user:{{user}}" title="my profile"><span class="glyphicon glyphicon-user"></span> {{user}}</a>
+        <li ng-show="user"><a href="#/logout"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
     </ul>
 </aside>
 <div class="container">
@@ -52,7 +52,7 @@
     <label>Password</label>
     <input type="password" class="form-control" placeholder="password" ng-model="pass">
     </div>
-    <button type="submit" class="btn btn-default">Submit</button>
+    <button type="submit" class="btn btn-default">Login</button>
 </form>
 </script>
 
@@ -84,8 +84,8 @@ Not yet implemented. Please use SSH instead.
 <post ng-model="post" ng-if="post.rev"></post>
 <div class="alert alert-warning" ng-hide="post.rev || loading"> No Content </div>
 <hr>
-<a class="btn btn-primary" href="#/put/{{key}}">Edit</a>
-<button class="btn btn-default" ng-click="show_raw()" ng-if="post.rev">Show Raw</button>
+<a class="btn btn-primary" href="#/put/{{key}}" title="Edit"><span class="glyphicon glyphicon-edit"></span> Edit</a>
+<button class="btn btn-default" ng-click="show_raw()" ng-if="post.rev" title="Show Raw"><span class="glyphicon glyphicon-new-window"></span> Raw</button>
 </script>
 
 <script type="text/ng-template" id="put.html">
@@ -93,7 +93,7 @@ Not yet implemented. Please use SSH instead.
 <form ng-submit="submit()">
     <input class="query-input" type="text" ng-model="key" placeholder="new post"><br>
     <textarea codemirror ng-model="content"></textarea> <br>
-    <button class="btn btn-primary" type="submit">Submit</button>
+    <button class="btn btn-primary" type="submit"><span class="glyphicon glyphicon-floppy-disk"></span> Save</button>
     <span ng-show="rev">rev: {{rev}}</span><br>
 </form>
 </script>
