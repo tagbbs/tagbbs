@@ -14,12 +14,12 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         templateUrl: "register.html",
         controller: "Register"
     })
-    .when("/list/:query?", {
+    .when("/list/:query", {
         templateUrl: "list.html",
         controller: "List",
         reloadOnSearch: false
     })
-    .when("/show/:key?", {
+    .when("/show/:query?/:key", {
         templateUrl: "show.html",
         controller: "Show"
     })
@@ -114,6 +114,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         $location.url("/put").search({tags: $scope.tags});
     };
 
+    var parsed = {}; // dirty hack to prevent double refresh
     var jump = function(cursor, before, after) {
         var parts = [];
         if ($scope.query) parts.push($scope.query);
@@ -136,15 +137,17 @@ TagBBS.config(function($routeProvider, $locationProvider) {
                 $scope.message = null;
             }
             $scope.posts = d.result.posts;
-            var parsed = d.result.query;
+            parsed = d.result.query;
             $scope.query = parsed.tags.join(" ");
             $scope.tags = parsed.tags;
-            // update search
-            $location.search({
-                cursor: parsed.cursor,
-                before: parsed.before,
-                after: parsed.after
-            });
+            // update search if not default
+            if (parsed.cursor || parsed.before != 20 || parsed.after != 0) {
+                $location.search({
+                    cursor: parsed.cursor,
+                    before: parsed.before,
+                    after: parsed.after
+                });
+            }
         });
     };
     $scope.firstPage = function() {
@@ -163,13 +166,18 @@ TagBBS.config(function($routeProvider, $locationProvider) {
             jump($scope.posts[$scope.posts.length-1].key, -1, 21);
         }
     };
+    $scope.$on('$routeUpdate', function() {
+        if (parsed.cursor == $routeParams.cursor && parsed.before == $routeParams.before && parsed.after == $routeParams.after) return;
+        jump($routeParams.cursor, $routeParams.before, $routeParams.after);
+    });
     jump($routeParams.cursor, $routeParams.before, $routeParams.after);
 })
-.controller("Show", function($scope, $routeParams, $location, bbs) {
+.controller("Show", function($scope, $routeParams, $location, $timeout, bbs) {
     $scope.key = $routeParams.key;
-    $scope.error = "";
+    $scope.message = "";
     $scope.post = {};
     $scope.loading = true;
+
     $scope.show_raw = function() {
         window.open('data:text/plain;charset=utf-8,' + encodeURIComponent($scope.post.content));
     };
@@ -182,13 +190,50 @@ TagBBS.config(function($routeProvider, $locationProvider) {
             tags: post.header.tags || [],
         });
     };
+    $scope.query = function() {
+        return $routeParams.query;
+    };
+    $scope.thread = function() {
+        return $scope.post.header && $scope.post.header.thread || $scope.key;
+    };
+    // TODO cache the list
+    $scope.prev = function() {
+        var q = $scope.query();
+        bbs.list(q + " @" + $scope.key + " -10").success(function(d) {
+            var posts = d.result && d.result.posts || [];
+            if (posts.length == 0) {
+                $scope.message = "the end of the list...";
+                $timeout(function() {
+                    $scope.message = "";
+                }, 2000);
+                return;
+            } else {
+                $location.url("/show/" + q + "/" + posts[posts.length-1].key);
+            }
+        });
+    };
+    $scope.next = function() {
+        var q = $scope.query();
+        bbs.list(q + " @" + $scope.key + " --1 +11").success(function(d) {
+            var posts = d.result && d.result.posts || [];
+            if (posts.length == 0) {
+                $scope.message = "the end of the list...";
+                $timeout(function() {
+                    $scope.message = "";
+                }, 2000);
+                return;
+            } else {
+                $location.url("/show/" + q + "/" + posts[0].key);
+            }
+        });
+    };
     $scope.$watch("key", function(key) {
         if (!key) {
             $scope.loading = false;
             return;
         }
         bbs.get(key).success(function(d) {
-            $scope.error = d.error;
+            $scope.message = d.error;
             $scope.post = d.result || {};
             var parsed = bbs.parse($scope.post.content)
             $scope.post.header = parsed.header;
@@ -229,7 +274,8 @@ TagBBS.config(function($routeProvider, $locationProvider) {
             if (d.error) {
                 $scope.error = d.error;
             } else if (d.result) {
-                $location.url("/show/" + d.result).search(null);
+                var q = bbs.parse($scope.content).header.thread || d.result;
+                $location.url("/show/" + q + "/" + d.result);
             }
         })
     };

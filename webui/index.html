@@ -83,7 +83,7 @@ Not yet implemented. Please use SSH instead.
 <div class="key-range" ng-if="posts"><span class="post-key">{{posts[0].key}}</span> ~ <span class="post-key">{{posts[posts.length-1].key}}</span></div>
 <ul class="posts-listing center-block">
     <li ng-repeat="post in posts">
-        <a href="#show/{{post.key}}">
+        <a href="#show/{{query}}/{{post.key}}">
             <span class="post-key">{{post.key}}</span><span class="post-title">{{post.title}}</span>
         </a>
         <a class="post-author" href="#/show/user:{{post.authors.0}}">{{post.authors.0}}</a>
@@ -93,12 +93,29 @@ Not yet implemented. Please use SSH instead.
 </script>
 
 <script type="text/ng-template" id="show.html">
-<div class="alert alert-danger" ng-if="error">{{error}}</div>
+<div class="btn-toolbar thread-pagination" ng-if="query()">
+<div class="btn-group">
+<a class="btn btn-default" href="#/list/{{query()}}"><span class="glyphicon glyphicon-list"></span> {{query()}}</a>
+<a class="btn btn-default" href="#/list/{{thread()}}" ng-if="query() != thread()"><span class="glyphicon glyphicon-list"></span> Thread</a>
+</div>
+<div class="btn-group">
+<button class="btn btn-default" ng-click="prev()"><span class="glyphicon glyphicon-chevron-left"></span> <span class="text">Prev</span></button>
+<button class="btn btn-default" ng-click="next()"><span class="text">Next</span> <span class="glyphicon glyphicon-chevron-right"></span></button>
+</div>
+</div>
+</div>
+<div class="alert alert-warning flash" ng-bind="message" ng-show="message"></div>
 <post ng-model="post" ng-if="post.rev"></post>
 <div class="alert alert-warning" ng-hide="post.rev || loading"> No Content </div>
+<div class="btn-toolbar" ng-hide="loading">
+<div class="btn-group">
 <button class="btn btn-primary" ng-click="reply()" title="Reply" ng-if="key"><span class="glyphicon glyphicon-edit"></span> Reply</button>
+</div>
+<div class="btn-group">
 <a class="btn btn-default" href="#/put/{{key}}" title="Edit" ng-if="key"><span class="glyphicon glyphicon-edit"></span> Edit</a>
 <button class="btn btn-default" ng-click="show_raw()" ng-if="post.rev" title="Show Raw"><span class="glyphicon glyphicon-new-window"></span> Source</button>
+</div>
+</div>
 </script>
 
 <script type="text/ng-template" id="put.html">
@@ -115,11 +132,10 @@ Not yet implemented. Please use SSH instead.
 <div class="panel panel-default">
   <div class="panel-heading">
     <h1 class="panel-title">{{title}}</h1>
-    <br>
     <small>
-    <div>{{timestamp}}, {{key}} rev {{rev}}</div>
-    <span ng-show="tags">in: <span ng-repeat="tag in tags"><a href="#/list/{{tag}}">{{tag}}</a> </span></span>
-    <span ng-show="authors">by: <span ng-repeat="author in authors"><a href="#/show/user:{{author}}">{{author}}</a> </span></span>
+    <span ng-show="authors" class="post-authors">by: <span ng-repeat="author in authors"><a href="#/show/user:{{author}}">{{author}}</a> </span></span>
+    <span ng-show="tags" class="post-tags">in: <span ng-repeat="tag in tags"><a href="#/list/{{tag}}">{{tag}}</a> </span></span>
+    <span class="post-timestamp">{{timestamp}}, {{key}} rev {{rev}}</span>
     </small>
   </div>
   <div class="panel-body">

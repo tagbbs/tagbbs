@@ -67,7 +67,7 @@ aside ul.nav li a:focus {
   outline: none;
 }
 
-.list-pagination {
+.list-pagination, .thread-pagination {
   display: table;
   margin-bottom: 20px;
 }
@@ -120,6 +120,10 @@ ul.posts-listing .post-tag {
 pre.post-source {
   background: none;
   border: none;
+}
+
+.post-authors, .post-tags, .post-timestamp {
+  display: inline-block;
 }
 
 @media all and (orientation: portrait), all and (max-width: 720px) {
