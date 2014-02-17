@@ -48,7 +48,7 @@ Hello World!
 
 	// Test Query
 	var pid string
-	if list, err := b.Query("a"); err != nil {
+	if list, _, err := b.Query("a"); err != nil {
 		t.Fatal(err)
 	} else if len(list) != 2 {
 		t.Fatal("Wrong number of posts returned.")
@@ -84,7 +84,7 @@ Hello World!
 	}
 
 	// Test Query Again
-	if list, err := b.Query("a"); err != nil {
+	if list, _, err := b.Query("a"); err != nil {
 		t.Fatal(err)
 	} else if len(list) != 1 {
 		t.Fatal("Wrong number of posts returned.", list)
