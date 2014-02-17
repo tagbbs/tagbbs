@@ -168,7 +168,8 @@ pre.post-source {
   }
 }
 
-@media all and (orientation: portrait) and (max-width: 720px), all and (max-width: 480px) {
+@media all and (orientation: landscape) and (max-width: 720px) {
+  /* Disable fixed nav */
   body {
     padding-top: 0px;
   }
@@ -177,6 +178,9 @@ pre.post-source {
     margin-top: 0px;
     margin-left: 0px;
   }
+}
+
+@media all and (max-width: 480px) {
   ul.posts-listing .post-title {
     width: 60%;
   }
