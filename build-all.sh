@@ -16,6 +16,7 @@ do
     cd $NAME-$os-$RELEASE
     GOOS=$os go build -ldflags "-X github.com/thinxer/tagbbs.version $RELEASE" github.com/thinxer/tagbbs/apibbsd
     GOOS=$os go build -ldflags "-X github.com/thinxer/tagbbs.version $RELEASE" github.com/thinxer/tagbbs/sshbbsd
+    GOOS=$os go build -ldflags "-X github.com/thinxer/tagbbs.version $RELEASE" github.com/thinxer/tagbbs/fsck
     cd ..
     ln -sfvn $NAME-$os-$RELEASE $NAME-$os
     tar zcf $NAME-$os-$RELEASE.tgz $NAME-$os-$RELEASE

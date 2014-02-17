@@ -27,14 +27,14 @@
 <body>
 <aside>
     <ul class="nav">
-        <li><h1 title="server build: {{version}}"><span class="glyphicon glyphicon-home"></span> {{name}}</h1></li>
-        <li><a href="#/list" ng-click="reload()"><span class="glyphicon glyphicon-th-list"></span> List</a></li>
+        <li><a href="#/list/sysop" title="server build: {{version}}"><span class="glyphicon glyphicon-home"></span> {{name}}</a></li>
+        <li><a href="#/list/test"><span class="glyphicon glyphicon-list"></span> Test</a></li>
         <li><a href="#/put"><span class="glyphicon glyphicon-file"></span> Put</a></li>
         <li>&nbsp;</li>
         <li ng-hide="user"><a href="#/login"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
         <li ng-hide="user"><a href="#/register"> Register</a></li>
-        <li ng-show="user"><a href="#/show/user:{{user}}" title="my profile"><span class="glyphicon glyphicon-user"></span> {{user}}</a>
-        <li ng-show="user"><a href="#/logout"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+        <li ng-show="user"><a href="#/show/user:{{user}}" title="my profile"><span class="glyphicon glyphicon-user"></span> <span class="text">{{user}}<span></a>
+        <li ng-show="user"><a href="#/logout"><span class="glyphicon glyphicon-log-out"></span> <span class="text">Logout<span></a></li>
     </ul>
 </aside>
 <div class="container">

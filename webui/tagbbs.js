@@ -36,10 +36,6 @@ TagBBS.config(function($routeProvider, $locationProvider) {
     $scope.setUser = function(user) {
         $scope.user = user;
     };
-    $scope.reload = function() {
-        $location.url("/list");
-        $route.reload();
-    };
     if (!bbs.session()) {
         if ($location.path() != "/login" && $location.path() != "/logout")
             localStorage.returnPath = $location.path();
@@ -62,7 +58,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
                 $location.path(localStorage.returnPath);
                 localStorage.returnPath = "";
             } else {
-                $location.url("/list");
+                $location.url("/list/sysop");
             }
         }
     }

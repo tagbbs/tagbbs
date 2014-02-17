@@ -50,6 +50,9 @@ func (s SortedString) Slice(v string, before int, after int) SortedString {
 	return SortedString(s[before:after])
 }
 func (s *SortedString) Unique() {
+	if len(*s) == 0 {
+		return
+	}
 	i := 0
 	for j := 1; j < len(*s); j++ {
 		if (*s)[i] != (*s)[j] {
@@ -74,4 +77,29 @@ func (s *SortedString) Delete(val string) bool {
 	} else {
 		return false
 	}
+}
+
+func SortedUnion(sss ...SortedString) (ret SortedString) {
+	for _, ss := range sss {
+		ret = append(ret, ss...)
+	}
+	ret.Sort()
+	ret.Unique()
+	return
+}
+
+func SortedIntersect(sss ...SortedString) (ret SortedString) {
+	if len(sss) == 0 {
+		return
+	}
+	ret = make(SortedString, len(sss[0]))
+	copy(ret, sss[0])
+	for _, ss := range sss[1:] {
+		for _, s := range ret {
+			if !ss.Contain(s) {
+				ret.Delete(s)
+			}
+		}
+	}
+	return
 }

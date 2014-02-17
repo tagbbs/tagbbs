@@ -1,40 +1,54 @@
 package tagbbs
 
 import (
+	"bytes"
+	"log"
 	"strconv"
 	"strings"
 )
 
-func (b *BBS) indexRemove(key string, p Post) {
-	fm := p.FrontMatter()
-	if fm == nil {
-		return
+func analyze(key string, p Post) (keys SortedString) {
+	switch {
+	case strings.HasPrefix(key, "post:"):
+		if len(bytes.Trim(p.Content, " \r\n\t")) == 0 {
+			return
+		}
+		fm := p.FrontMatter()
+		if fm == nil {
+			return
+		}
+		keys = append(keys, fm.Tags...)
+		if len(fm.Thread) > 0 {
+			keys = append(keys, fm.Thread)
+		} else {
+			keys = append(keys, key)
+		}
+		keys.Sort()
+		keys.Unique()
 	}
-	tags := []string{""}
-	tags = append(tags, fm.Tags...)
-	for _, tag := range tags {
+	return
+}
+
+func (b *BBS) indexRemove(key string, p Post) SortedString {
+	names := analyze(key, p)
+	for _, name := range names {
 		ids := &SortedString{}
-		b.modify("tag:"+tag, &ids, func(v interface{}) bool {
-			ids.Sort() // XXX temporary fix
+		b.modify("list:"+name, &ids, func(v interface{}) bool {
 			return ids.Delete(key)
 		})
 	}
+	return names
 }
 
-func (b *BBS) indexAdd(key string, p Post) {
-	fm := p.FrontMatter()
-	if fm == nil {
-		return
-	}
-	tags := []string{""}
-	tags = append(tags, fm.Tags...)
-	for _, tag := range tags {
+func (b *BBS) indexAdd(key string, p Post) SortedString {
+	keywords := analyze(key, p)
+	for _, word := range keywords {
 		ids := &SortedString{}
-		b.modify("tag:"+tag, &ids, func(v interface{}) bool {
-			ids.Sort() // XXX temporary fix
+		b.modify("list:"+word, &ids, func(v interface{}) bool {
 			return ids.Insert(key)
 		})
 	}
+	return keywords
 }
 
 func (b *BBS) indexReplace(key string, oldpost, newpost Post) {
@@ -77,8 +91,60 @@ func (b *BBS) Query(q string) ([]string, ParsedQuery, error) {
 	if p.Before == 0 && p.After == 0 {
 		p.Before = 20
 	}
-	var ids SortedString
-	err := b.modify("tag:"+p.Tags[0], &ids, nil)
+	var lists []SortedString
+	for _, tag := range p.Tags {
+		var ids SortedString
+		err := b.modify("list:"+tag, &ids, nil)
+		if err != nil {
+			return nil, p, err
+		}
+		lists = append(lists, ids)
+	}
+	ids := SortedIntersect(lists...)
 	ids = ids.Slice(p.Cursor, p.Before, p.After)
-	return ids, p, err
+	return ids, p, nil
+}
+
+// Rebuild all index.
+// Currently it should be called only when the database is exclusively locked.
+func (b *BBS) RebuildIndex() {
+	var checklog = func(err error) {
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	var i, nextid int64
+	checklog(b.meta("nextid", &nextid, nil))
+	log.Println("NextId:", nextid)
+	// gather tags
+	var allNames, tmp SortedString
+	for i = 0; i < nextid; i++ {
+		key := "post:" + strconv.FormatInt(i, 16)
+		p, err := b.Get(key, SuperUser)
+		checklog(err)
+		names := analyze(key, p)
+		allNames = append(allNames, names...)
+		allNames.Sort()
+		allNames.Unique()
+	}
+	log.Println("All List Names:", len(allNames))
+	// remove all lists
+	for _, name := range allNames {
+		checklog(b.modify("list:"+name, &tmp, func(v interface{}) bool {
+			tmp = SortedString{}
+			return true
+		}))
+	}
+	// re-add all posts
+	var count int64
+	for i = 0; i < nextid; i++ {
+		key := "post:" + strconv.FormatInt(i, 16)
+		p, err := b.Get(key, SuperUser)
+		checklog(err)
+		b.indexReplace(key, Post{}, p)
+		if len(p.Content) != 0 {
+			count++
+		}
+	}
+	log.Printf("Total: %v posts, %v tags\n", count, len(allNames))
 }

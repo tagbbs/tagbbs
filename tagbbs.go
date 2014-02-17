@@ -55,7 +55,13 @@ func (b *BBS) Put(key string, post Post, user string) error {
 
 func (b *BBS) Version() (string, string, error) {
 	var name string
-	err := b.meta("name", &name, nil)
+	p, err := b.Get("post:0", SuperUser)
+	fm := p.FrontMatter()
+	if fm == nil {
+		name = "unnamed"
+	} else {
+		name = fm.Title
+	}
 	return name, version, err
 }
 
@@ -105,7 +111,7 @@ func (b *BBS) allow(key string, post Post, user string, write bool) bool {
 			fm := post.FrontMatter()
 			if fm != nil {
 				for _, a := range fm.Authors {
-					if a == user {
+					if a == user || a == "*" {
 						return true
 					}
 				}
@@ -212,16 +218,18 @@ func (b *BBS) Auth(user, pass string) bool {
 }
 
 func (b *BBS) init() {
-	var (
-		nextid int64
-		name   string
-	)
-	check(b.meta("nextid", &nextid, nil))
-	check(b.meta("name", &name, func(v interface{}) bool {
-		if len(name) == 0 {
-			name = "TagBBS"
-			return true
-		}
-		return false
-	}))
+	p, err := b.Get("post:0", SuperUser)
+	check(err)
+	if p.Rev == 0 {
+		p.Rev++
+		p.Content = []byte(`---
+title: TagBBS
+authors: [sysop]
+tags: [sysop]
+---
+
+Welcome to TagBBS!
+`)
+		check(b.Put("post:0", p, SuperUser))
+	}
 }

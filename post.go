@@ -17,6 +17,8 @@ type FrontMatter struct {
 	Title   string
 	Tags    []string
 	Authors []string
+	Reply   string
+	Thread  string
 }
 
 func (p *Post) FrontMatter() *FrontMatter {
