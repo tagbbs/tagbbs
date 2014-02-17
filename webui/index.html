@@ -27,9 +27,9 @@
 <body>
 <aside>
     <ul class="nav">
-        <li><a href="#/list/sysop" title="server build: {{version}}"><span class="glyphicon glyphicon-home"></span> {{name}}</a></li>
-        <li><a href="#/list/test"><span class="glyphicon glyphicon-list"></span> Test</a></li>
-        <li><a href="#/put"><span class="glyphicon glyphicon-file"></span> Put</a></li>
+        <li ng-show="user"><a href="#/list/sysop" title="server build: {{version}}"><span class="glyphicon glyphicon-home"></span> {{name}}</a></li>
+        <li ng-show="user"><a href="#/list/test"><span class="glyphicon glyphicon-list"></span> Test</a></li>
+        <li ng-show="user"><a href="#/put"><span class="glyphicon glyphicon-file"></span> Put</a></li>
         <li>&nbsp;</li>
         <li ng-hide="user"><a href="#/login"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
         <li ng-hide="user"><a href="#/register"> Register</a></li>
@@ -57,7 +57,8 @@
 </script>
 
 <script type="text/ng-template" id="register.html">
-Not yet implemented. Please use SSH instead.
+<p>Not yet implemented in the web interface. Please use SSH instead.
+<p>Or, you can try login with Username: test and Password: test.
 </script>
 
 <script type="text/ng-template" id="logout.html">
