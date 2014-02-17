@@ -120,11 +120,11 @@ func usermain(user string, ch ssh.Channel) {
 			term.Println(user)
 			term.PerrorIf(nil)
 		case "list":
-			name := ""
+			query := ""
 			if len(cmds) > 1 {
-				name = cmds[1]
+				query = strings.Join(cmds[1:], " ")
 			}
-			ids, err := bbs.Query(name)
+			ids, _, err := bbs.Query(query)
 			for _, id := range ids {
 				p, _ := bbs.Get(id, user)
 				fm := p.FrontMatter()

@@ -16,7 +16,8 @@ TagBBS.config(function($routeProvider, $locationProvider) {
     })
     .when("/list/:query?", {
         templateUrl: "list.html",
-        controller: "List"
+        controller: "List",
+        reloadOnSearch: false
     })
     .when("/show/:key?", {
         templateUrl: "show.html",
@@ -30,17 +31,21 @@ TagBBS.config(function($routeProvider, $locationProvider) {
 
     $locationProvider.html5Mode(false);
 })
-.controller("MainCtrl", function($scope, $location, bbs) {
+.controller("MainCtrl", function($scope, $location, $route, bbs) {
     $scope.user = "";
     $scope.setUser = function(user) {
         $scope.user = user;
+    };
+    $scope.reload = function() {
+        $location.url("/list");
+        $route.reload();
     };
     if (!bbs.session()) {
         if ($location.path() != "/login" && $location.path() != "/logout")
             localStorage.returnPath = $location.path();
         else
             localStorage.returnPath = "";
-        $location.path("/login");
+        $location.url("/login");
     }
     bbs.version().success(function(d) {
         $scope.name = d.result.name;
@@ -57,7 +62,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
                 $location.path(localStorage.returnPath);
                 localStorage.returnPath = "";
             } else {
-                $location.path("/list");
+                $location.url("/list");
             }
         }
     }
@@ -93,24 +98,78 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         } else {
             localStorage.sid = "";
             $scope.setUser("");
-            $location.path("/login");
+            $location.url("/login");
         }
     });
 })
 .controller("Register", function($scope) {
 
 })
-.controller("List", function($scope, $routeParams, $location, bbs) {
+.controller("List", function($scope, $routeParams, $location, $route, $timeout, bbs) {
     $scope.query = $routeParams.query || "";
+    $scope.tags = [];
     $scope.posts = [];
-    $scope.newQuery = function() {
-        $location.path("/list/" + $scope.query);
+
+    $scope.newHandQuery = function() {
+        $location.url("/list/" + $scope.query);
+        $route.reload();
     };
-    bbs.list($scope.query).success(function(d) {
-        $scope.posts = d.result;
-    });
+    $scope.put = function() {
+        $location.url("/put").search({tags: $scope.tags});
+    };
+
+    var jump = function(cursor, before, after) {
+        var parts = [];
+        if ($scope.query) parts.push($scope.query);
+        if (cursor) parts.push("@" + cursor);
+        if (before) parts.push("-" + before);
+        if (after) parts.push("+" + after);
+        bbs.list(parts.join(" ")).success(function(d) {
+            if (!d.result) return;
+            if (d.result.posts.length == 0) {
+                if ($scope.posts.length > 0) {
+                    $scope.message = "No more...";
+                } else {
+                    $scope.message = "No result...";
+                }
+                $timeout(function() {
+                    $scope.message = "";
+                }, 2000);
+                return;
+            } else {
+                $scope.message = null;
+            }
+            $scope.posts = d.result.posts;
+            var parsed = d.result.query;
+            $scope.query = parsed.tags.join(" ");
+            $scope.tags = parsed.tags;
+            // update search
+            $location.search({
+                cursor: parsed.cursor,
+                before: parsed.before,
+                after: parsed.after
+            });
+        });
+    };
+    $scope.firstPage = function() {
+        jump("", 0, 20);
+    };
+    $scope.lastPage = function() {
+        jump("", 20, 0);
+    };
+    $scope.prevPage = function() {
+        if ($scope.posts.length > 0) {
+            jump($scope.posts[0].key, 20, 0);
+        }
+    };
+    $scope.nextPage = function() {
+        if ($scope.posts.length > 0) {
+            jump($scope.posts[$scope.posts.length-1].key, -1, 21);
+        }
+    };
+    jump($routeParams.cursor, $routeParams.before, $routeParams.after);
 })
-.controller("Show", function($scope, $routeParams, bbs) {
+.controller("Show", function($scope, $routeParams, $location, bbs) {
     $scope.key = $routeParams.key;
     $scope.error = "";
     $scope.post = {};
@@ -118,10 +177,26 @@ TagBBS.config(function($routeProvider, $locationProvider) {
     $scope.show_raw = function() {
         window.open('data:text/plain;charset=utf-8,' + encodeURIComponent($scope.post.content));
     };
+    $scope.reply = function() {
+        var post = $scope.post;
+        $location.url("/put").search({
+            title: post.header.title.substring(0,3) == 'Re:' && post.header.title || 'Re: ' + post.header.title,
+            reply: $scope.key,
+            thread: post.header.thread || $scope.key,
+            tags: post.header.tags || [],
+        });
+    };
     $scope.$watch("key", function(key) {
+        if (!key) {
+            $scope.loading = false;
+            return;
+        }
         bbs.get(key).success(function(d) {
             $scope.error = d.error;
             $scope.post = d.result || {};
+            var parsed = bbs.parse($scope.post.content)
+            $scope.post.header = parsed.header;
+            $scope.post.body = parsed.body;
             $scope.loading = false;
         });
     });
@@ -140,13 +215,17 @@ TagBBS.config(function($routeProvider, $locationProvider) {
             }
         })
     } else {
-        $scope.content =
-            "---\n" +
-            "title: \"我要饭全站\"\n" +
-            "authors: [" + $scope.user + "]\n" +
-            "tags: [test, 1481]\n" +
-            "---\n\n" +
-            "我要饭全站啦！大家快来报名！\n";
+        var tags = $routeParams.tags || [];
+        if (tags.join("").length == 0) tags = ["test"];
+        var header = {
+            title: $routeParams.title || "Title",
+            authors: [$scope.user],
+            tags: tags
+        };
+        if ($routeParams.reply) header.reply = $routeParams.reply;
+        if ($routeParams.thread) header.thread = $routeParams.thread;
+        $scope.content = "---\n" + jsyaml.safeDump(header, {flowLevel: 1});
+        $scope.content += "---\nMarkdown Content";
     }
 
     $scope.submit = function() {
@@ -154,30 +233,14 @@ TagBBS.config(function($routeProvider, $locationProvider) {
             if (d.error) {
                 $scope.error = d.error;
             } else if (d.result) {
-                $location.path("/show/" + d.result);
+                $location.url("/show/" + d.result).search(null);
             }
         })
     };
 })
 .directive("post", function ($sce) {
     var markdown = new Showdown.converter();
-    var sep = function(source) {
-        source = source || "";
-        var trimmed = source.trimLeft();
-        if (trimmed.substring(0, 4) == "---\n") {
-            var headerEnd = trimmed.indexOf("\n---\n");
-            if (headerEnd > 0) {
-                var header = trimmed.substring(0, headerEnd);
-                var body = trimmed.substring(headerEnd + 5);
-                try {
-                    return {header: jsyaml.safeLoad(header), body: body}
-                } catch (e) {
-                    console.log(e);
-                }
-            }
-        }
-        return {header: null, body: source}
-    }
+
     return {
         require: "ngModel",
         restrict: "E",
@@ -193,13 +256,12 @@ TagBBS.config(function($routeProvider, $locationProvider) {
                 scope.body = "";
                 scope.source = post.content;
 
-                var hb = sep(post.content);
-                if (hb.header) {
-                    scope.title = hb.header.title;
-                    scope.tags = hb.header.tags;
-                    scope.authors = hb.header.authors;
-                    if (hb.header.raw) scope.source = hb.body;
-                    else scope.body = $sce.trustAsHtml(markdown.makeHtml(hb.body));
+                if (post.header) {
+                    scope.title = post.header.title;
+                    scope.tags = post.header.tags;
+                    scope.authors = post.header.authors;
+                    if (post.header.raw) scope.source = post.body;
+                    else scope.body = $sce.trustAsHtml(markdown.makeHtml(post.body));
                 }
             };
         }
@@ -278,6 +340,24 @@ return {
                 sid = _sid
             }
             return oldsid;
+        },
+        parse: function(source) {
+            source = source || "";
+            if (source.length == 0) return {header:null, body:""};
+            var trimmed = source.trimLeft();
+            if (trimmed.substring(0, 4) == "---\n") {
+                var headerEnd = trimmed.indexOf("\n---\n");
+                if (headerEnd > 0) {
+                    var header = trimmed.substring(0, headerEnd);
+                    var body = trimmed.substring(headerEnd + 5);
+                    try {
+                        return {header: jsyaml.safeLoad(header), body: body}
+                    } catch (e) {
+                        console.log(e);
+                    }
+                }
+            }
+            return {header: null, body: source}
         }
     };
 })
@@ -336,7 +416,6 @@ return {
             return navigator.userAgent.match(/IEMobile/i);
         },
         any: function() {
-            console.log(navigator.userAgent)
             return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iOS() || isMobile.Opera() || isMobile.Windows());
         }
     };

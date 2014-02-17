@@ -52,7 +52,7 @@ func who(api, user string, params url.Values) (interface{}, error) {
 }
 
 func list(api, user string, params url.Values) (interface{}, error) {
-	ids, err := bbs.Query(params.Get("query"))
+	ids, parsed, err := bbs.Query(params.Get("query"))
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,10 @@ func list(api, user string, params url.Values) (interface{}, error) {
 			"tags":    fm.Tags,
 		})
 	}
-	return r, err
+	return M{
+		"posts": r,
+		"query": parsed,
+	}, err
 }
 
 func get(api, user string, params url.Values) (interface{}, error) {

@@ -25,6 +25,30 @@ func (s SortedString) Contain(v string) bool {
 	i := s.Search(v)
 	return i < len(s) && s[i] == v
 }
+func (s SortedString) norm(i int) int {
+	if i < 0 {
+		return 0
+	}
+	if i > len(s) {
+		return len(s)
+	}
+	return i
+}
+func (s SortedString) Slice(v string, before int, after int) SortedString {
+	if len(s) == 0 {
+		return SortedString{}
+	}
+	i := s.Search(v)
+	if i == 0 && s[i] != v && before > 0 {
+		i = len(s)
+	}
+	before = s.norm(i - before)
+	after = s.norm(i + after)
+	if before > after {
+		after = before
+	}
+	return SortedString(s[before:after])
+}
 func (s *SortedString) Unique() {
 	i := 0
 	for j := 1; j < len(*s); j++ {

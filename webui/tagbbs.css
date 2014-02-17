@@ -64,7 +64,6 @@ aside ul.nav li h1:hover {
 
 .login {
   width: 200px;
-  margin: 0 auto;
 }
 
 .query-input {
@@ -77,6 +76,11 @@ aside ul.nav li h1:hover {
 
 .query-input:focus {
   outline: none;
+}
+
+.list-pagination {
+  display: table;
+  margin-bottom: 20px;
 }
 
 ul.posts-listing {
@@ -168,4 +172,19 @@ pre.post-source {
   ul.posts-listing .post-tag {
     display: none;
   }
+  button .text {
+    display: none;
+  }
+}
+
+.flash {
+  opacity: 1;
+  transition: 0.2s linear opacity;
+}
+.flash.ng-hide {
+  opacity: 0;
+  padding: 0;
+  margin: 0;
+  height: 0;
+  display: block !important;
 }

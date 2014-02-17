@@ -28,7 +28,7 @@
 <aside>
     <ul class="nav">
         <li><h1 title="server build: {{version}}"><span class="glyphicon glyphicon-home"></span> {{name}}</h1></li>
-        <li><a href="#/list"><span class="glyphicon glyphicon-th-list"></span> List</a></li>
+        <li><a href="#/list" ng-click="reload()"><span class="glyphicon glyphicon-th-list"></span> List</a></li>
         <li><a href="#/put"><span class="glyphicon glyphicon-file"></span> Put</a></li>
         <li>&nbsp;</li>
         <li ng-hide="user"><a href="#/login"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
@@ -42,7 +42,7 @@
 </div>
 
 <script type="text/ng-template" id="login.html">
-<form role="form" ng-submit="submit()" class="login">
+<form role="form" ng-submit="submit()" class="login center-block">
     <div class="alert alert-danger" ng-show="message">{{message}}</div>
     <div class="form-group">
     <label>User</label>
@@ -65,10 +65,22 @@ Not yet implemented. Please use SSH instead.
 </script>
 
 <script type="text/ng-template" id="list.html">
-<form ng-submit="newQuery()">
+<form ng-submit="newHandQuery()">
 <input class="query-input" type="text" ng-model="query" placeholder="all">
 </form>
-<ul class="posts-listing">
+<div class="btn-toolbar list-pagination">
+<div class="btn-group">
+<button class="btn btn-primary" ng-click="put()"><span class="glyphicon glyphicon-file"></span> <span class="text">Put</span></button>
+</div>
+<div class="btn-group">
+<button class="btn btn-default" ng-click="firstPage()"><span class="glyphicon glyphicon-step-backward"></span> <span class="text">First</span></button>
+<button class="btn btn-default" ng-click="prevPage()"><span class="glyphicon glyphicon-chevron-left"></span> <span class="text">Prev</span></button>
+<button class="btn btn-default" ng-click="nextPage()"><span class="text">Next</span> <span class="glyphicon glyphicon-chevron-right"></span></button>
+<button class="btn btn-default" ng-click="lastPage()"><span class="text">Last</span> <span class="glyphicon glyphicon-step-forward"></span></button>
+</div>
+</div>
+<div class="alert alert-warning flash" ng-bind="message" ng-show="message"></div>
+<ul class="posts-listing center-block">
     <li ng-repeat="post in posts">
         <a href="#show/{{post.key}}">
             <span class="post-key">{{post.key}}</span><span class="post-title">{{post.title}}</span>
@@ -83,8 +95,8 @@ Not yet implemented. Please use SSH instead.
 <div class="alert alert-danger" ng-if="error">{{error}}</div>
 <post ng-model="post" ng-if="post.rev"></post>
 <div class="alert alert-warning" ng-hide="post.rev || loading"> No Content </div>
-<hr>
-<a class="btn btn-primary" href="#/put/{{key}}" title="Edit"><span class="glyphicon glyphicon-edit"></span> Edit</a>
+<button class="btn btn-primary" ng-click="reply()" title="Reply" ng-if="key"><span class="glyphicon glyphicon-edit"></span> Reply</button>
+<a class="btn btn-default" href="#/put/{{key}}" title="Edit" ng-if="key"><span class="glyphicon glyphicon-edit"></span> Edit</a>
 <button class="btn btn-default" ng-click="show_raw()" ng-if="post.rev" title="Show Raw"><span class="glyphicon glyphicon-new-window"></span> Source</button>
 </script>
 
@@ -99,13 +111,21 @@ Not yet implemented. Please use SSH instead.
 </script>
 
 <script type="text/ng-template" id="post.html">
-<h1>{{title}}</h1>
-<div>{{timestamp}}, {{key}} rev {{rev}}</div>
-<span ng-show="tags">in: <span ng-repeat="tag in tags"><a href="#/list/{{tag}}">{{tag}}</a> </span></span>
-<span ng-show="authors">by: <span ng-repeat="author in authors"><a href="#/show/user:{{author}}">{{author}}</a> </span></span>
-<hr>
-<div ng-bind-html="body" ng-if="body" class="post-body"></div>
-<pre ng-bind="source" ng-if="!body" class="post-source"></pre>
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h1 class="panel-title">{{title}}</h1>
+    <br>
+    <small>
+    <div>{{timestamp}}, {{key}} rev {{rev}}</div>
+    <span ng-show="tags">in: <span ng-repeat="tag in tags"><a href="#/list/{{tag}}">{{tag}}</a> </span></span>
+    <span ng-show="authors">by: <span ng-repeat="author in authors"><a href="#/show/user:{{author}}">{{author}}</a> </span></span>
+    </small>
+  </div>
+  <div class="panel-body">
+    <div ng-bind-html="body" ng-if="body" class="post-body"></div>
+    <pre ng-bind="source" ng-if="!body" class="post-source"></pre>
+  </div>
+</div>
 </script>
 
 </body>
