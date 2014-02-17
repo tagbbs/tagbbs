@@ -83,6 +83,11 @@ aside ul.nav li h1:hover {
   margin-bottom: 20px;
 }
 
+.key-range {
+  display: none;
+  color: gray;
+}
+
 ul.posts-listing {
   list-style-type: none;
   padding: 5px;
@@ -149,11 +154,17 @@ pre.post-source {
   aside ul.nav li a {
     padding: 5px 5px;
   }
+  ul.posts-listing {
+    padding-left: 0px;
+  }
   ul.posts-listing .post-key {
     display: none;
   }
   ul.posts-listing .post-title {
     word-wrap: break-word;
+  }
+  .key-range {
+    display: table;
   }
 }
 

@@ -80,6 +80,7 @@ Not yet implemented. Please use SSH instead.
 </div>
 </div>
 <div class="alert alert-warning flash" ng-bind="message" ng-show="message"></div>
+<div class="key-range" ng-if="posts"><span class="post-key">{{posts[0].key}}</span> ~ <span class="post-key">{{posts[posts.length-1].key}}</span></div>
 <ul class="posts-listing center-block">
     <li ng-repeat="post in posts">
         <a href="#show/{{post.key}}">
