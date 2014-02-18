@@ -127,6 +127,9 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         if (after) parts.push("+" + after);
         bbs.list(parts.join(" ")).success(function(d) {
             if (!d.result) return;
+            parsed = d.result.query;
+            $scope.query = parsed.tags.join(" ");
+            $scope.tags = parsed.tags;
             if (d.result.posts.length == 0) {
                 if ($scope.posts.length > 0) {
                     $scope.message = "No more...";
@@ -141,9 +144,6 @@ TagBBS.config(function($routeProvider, $locationProvider) {
                 $scope.message = null;
             }
             $scope.posts = d.result.posts;
-            parsed = d.result.query;
-            $scope.query = parsed.tags.join(" ");
-            $scope.tags = parsed.tags;
             // update search if not default
             if (parsed.cursor || parsed.before != 20 || parsed.after != 0) {
                 $location.search({
