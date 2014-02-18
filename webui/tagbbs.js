@@ -278,7 +278,8 @@ TagBBS.config(function($routeProvider, $locationProvider) {
             if (d.error) {
                 $scope.error = d.error;
             } else if (d.result) {
-                var q = bbs.parse($scope.content).header.thread || d.result;
+                var h = bbs.parse($scope.content).header;
+                var q = h && h.thread || d.result;
                 $location.url("/" + q + "/" + d.result);
             }
         })
