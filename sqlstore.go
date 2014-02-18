@@ -62,14 +62,14 @@ func (s *SQLStore) Put(key string, np Post) error {
 	// just use this insert for both cases
 	r, err = s.db.Exec(fmt.Sprintf("INSERT INTO %s (name, rev, content) VALUES (?,?,?)", s.table), key, np.Rev, np.Content)
 	if err != nil {
-		return err
+		return ErrRevNotMatch
 	}
 	rows, err = r.RowsAffected()
-	if err != nil {
-		return err
-	}
 	if rows != 1 {
 		return ErrRevNotMatch
+	}
+	if err != nil {
+		return err
 	}
 	return nil
 
