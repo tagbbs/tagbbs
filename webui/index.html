@@ -87,8 +87,8 @@
         <a href="#/{{query}}/{{post.key}}">
             <span class="post-key">{{post.key}}</span><span class="post-title">{{post.title}}</span>
         </a>
-        <a class="post-author" href="#/@/user:{{post.authors.0}}">{{post.authors.0}}</a>
-        <a class="post-tag" ng-repeat="tag in post.tags" href="#/{{tag}}">{{tag}}</a>
+        <a class="post-author" href="#/@/user:{{post.authors.0}}">@{{post.authors.0}}</a>
+        <a class="post-tag" ng-repeat="tag in post.tags" href="#/{{tag}}">#{{tag}}</a>
     </li>
 </ul>
 </script>
@@ -134,7 +134,7 @@
   <div class="panel-heading">
     <h1 class="panel-title">{{title}}</h1>
     <span ng-show="authors" class="post-authors"><span ng-repeat="author in authors"><a href="#/@/user:{{author}}" class="label label-{{$index == 0 && 'primary' || 'primary'}}">@{{author}}</a> </span></span>
-    <span ng-show="tags" class="post-tags"><span ng-repeat="tag in tags"><a href="#/{{tag}}" class="label label-info">/{{tag}}</a> </span></span>
+    <span ng-show="tags" class="post-tags"><span ng-repeat="tag in tags"><a href="#/{{tag}}" class="label label-info">#{{tag}}</a> </span></span>
     <small>
     <span class="post-timestamp">{{timestamp}} <a href="#/@/{{key}}">{{key}}</a> rev {{rev}}</span>
     </small>

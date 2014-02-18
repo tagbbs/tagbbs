@@ -1,3 +1,4 @@
+// TagBBS module
 var TagBBS = angular.module("TagBBS", ["ngRoute", "ngProgressLite"]);
 
 TagBBS.config(function($routeProvider, $locationProvider) {
@@ -286,7 +287,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
     };
 })
 .directive("post", function ($sce) {
-    var markdown = new Showdown.converter();
+    var markdown = new Showdown.converter({ extensions: ['tagbbs'] });
 
     return {
         require: "ngModel",
@@ -470,3 +471,34 @@ return {
     return isMobile;
 })
 ;
+
+//  Showdown TagBBS Extension
+//  @username   ->  <a href="#/@/user:username">@username</a>
+//  #hashtag    ->  <a href="#/hashtag">#hashtag</a>
+(function(){
+    var tagbbs = function(converter) {
+        return [
+
+            // #hashtag syntax, must be prefixed with a whitespace, to prevent collisions with #titles
+            { type: 'lang', regex: '([ \\t])#([^\\s]+)', replace: function(match, whitespace, tag) {
+                return whitespace + '<a href="#/' + tag.toLowerCase() + '">#' + tag + '</a>';
+            }},
+
+            // @username syntax, can be placed anywhere
+            { type: 'lang', regex: '\\B(\\\\)?@([^\\s]+)', replace: function(match, leadingSlash, username) {
+                // Check if we matched the leading \ and return nothing changed if so
+                if (leadingSlash === '\\') {
+                    return match;
+                } else {
+                    return '<a href="#/@/user:' + username + '">@' + username + '</a>';
+                }
+            }},
+
+            // Escaped @'s
+            { type: 'lang', regex: '\\\\@', replace: '@' }
+        ];
+    };
+
+    // Client-side export
+    if (typeof window !== 'undefined' && window.Showdown && window.Showdown.extensions) { window.Showdown.extensions.tagbbs = tagbbs; }
+}());
