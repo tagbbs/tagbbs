@@ -221,6 +221,10 @@ func (b *BBS) init() {
 	p, err := b.Get("post:0", SuperUser)
 	check(err)
 	if p.Rev == 0 {
+		key := b.NewPostKey()
+		if key != "post:0" {
+			log.Fatal("Wrong post:0 key, ", key)
+		}
 		p.Rev++
 		p.Content = []byte(`---
 title: TagBBS
