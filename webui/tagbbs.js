@@ -485,13 +485,8 @@ return {
             }},
 
             // @username syntax, can be placed anywhere
-            { type: 'lang', regex: '\\B(\\\\)?@([^\\s]+)', replace: function(match, leadingSlash, username) {
-                // Check if we matched the leading \ and return nothing changed if so
-                if (leadingSlash === '\\') {
-                    return match;
-                } else {
-                    return '<a href="#/@/user:' + username + '">@' + username + '</a>';
-                }
+            { type: 'lang', regex: '(\\s)@([^\\s]+)', replace: function(match, whitespace, username) {
+                return whitespace + '<a href="#/@/user:' + username + '">@' + username + '</a>';
             }},
 
             // Escaped @'s
