@@ -203,6 +203,9 @@ pre.post-source {
   button .text, aside .text {
     display: none;
   }
+  .container {
+    padding: 5px 2px;
+  }
 }
 
 .flash {
