@@ -122,8 +122,29 @@ pre.post-source {
   border: none;
 }
 
+.post .panel-heading h1 {
+  margin-bottom: 5px;
+  font-size: 150%;
+}
+
+.post .panel-body h1 {
+  font-size: 150%;
+}
+
+.post .panel-body h2 {
+  font-size: 130%;
+}
+
+.post .panel-body h3 {
+  font-size: 120%;
+}
+
 .post-authors, .post-tags, .post-timestamp {
   display: inline-block;
+}
+
+.post-authors .label, .post-tags .label {
+  font-weight: normal;
 }
 
 @media all and (orientation: portrait), all and (max-width: 720px) {

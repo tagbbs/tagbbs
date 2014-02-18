@@ -27,14 +27,14 @@
 <body>
 <aside>
     <ul class="nav">
-        <li ng-show="user"><a href="#/list/sysop" title="server build: {{version}}"><span class="glyphicon glyphicon-home"></span> {{name}}</a></li>
-        <li ng-show="user"><a href="#/list/test"><span class="glyphicon glyphicon-list"></span> Test</a></li>
-        <li ng-show="user"><a href="#/put"><span class="glyphicon glyphicon-file"></span> Put</a></li>
+        <li ng-show="user"><a href="#{{homepage}}" title="server build: {{version}}"><span class="glyphicon glyphicon-home"></span> {{name}}</a></li>
+        <li ng-show="user"><a href="#/test"><span class="glyphicon glyphicon-list"></span> Test</a></li>
+        <li ng-show="user"><a href="#/:"><span class="glyphicon glyphicon-file"></span> Put</a></li>
         <li>&nbsp;</li>
-        <li ng-hide="user"><a href="#/login"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
-        <li ng-hide="user"><a href="#/register"> Register</a></li>
-        <li ng-show="user"><a href="#/show/user:{{user}}" title="my profile"><span class="glyphicon glyphicon-user"></span> <span class="text">{{user}}<span></a>
-        <li ng-show="user"><a href="#/logout"><span class="glyphicon glyphicon-log-out"></span> <span class="text">Logout<span></a></li>
+        <li ng-hide="user"><a href="#/_/login"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+        <li ng-hide="user"><a href="#/_/register"> Register</a></li>
+        <li ng-show="user"><a href="#/@/user:{{user}}" title="my profile"><span class="glyphicon glyphicon-user"></span> <span class="text">{{user}}<span></a>
+        <li ng-show="user"><a href="#/_/logout"><span class="glyphicon glyphicon-log-out"></span> <span class="text">Logout<span></a></li>
     </ul>
 </aside>
 <div class="container">
@@ -84,11 +84,11 @@
 <div class="key-range" ng-if="posts"><span class="post-key">{{posts[0].key}}</span> ~ <span class="post-key">{{posts[posts.length-1].key}}</span></div>
 <ul class="posts-listing center-block">
     <li ng-repeat="post in posts">
-        <a href="#show/{{query}}/{{post.key}}">
+        <a href="#/{{query}}/{{post.key}}">
             <span class="post-key">{{post.key}}</span><span class="post-title">{{post.title}}</span>
         </a>
-        <a class="post-author" href="#/show/user:{{post.authors.0}}">{{post.authors.0}}</a>
-        <a class="post-tag" ng-repeat="tag in post.tags" href="#/list/{{tag}}">{{tag}}</a>
+        <a class="post-author" href="#/@/user:{{post.authors.0}}">{{post.authors.0}}</a>
+        <a class="post-tag" ng-repeat="tag in post.tags" href="#/{{tag}}">{{tag}}</a>
     </li>
 </ul>
 </script>
@@ -96,8 +96,8 @@
 <script type="text/ng-template" id="show.html">
 <div class="btn-toolbar thread-pagination" ng-if="query()">
 <div class="btn-group">
-<a class="btn btn-default" href="#/list/{{query()}}"><span class="glyphicon glyphicon-list"></span> {{query()}}</a>
-<a class="btn btn-default" href="#/list/{{thread()}}" ng-if="query() != thread()"><span class="glyphicon glyphicon-list"></span> Thread</a>
+<a class="btn btn-default" href="#/{{query()}}"><span class="glyphicon glyphicon-list"></span> {{query()}}</a>
+<a class="btn btn-default" href="#/{{thread()}}" ng-if="query() != thread()"><span class="glyphicon glyphicon-list"></span> Thread</a>
 </div>
 <div class="btn-group">
 <button class="btn btn-default" ng-click="prev()"><span class="glyphicon glyphicon-chevron-left"></span> <span class="text">Prev</span></button>
@@ -110,10 +110,10 @@
 <div class="alert alert-warning" ng-hide="post.rev || loading"> No Content </div>
 <div class="btn-toolbar" ng-hide="loading">
 <div class="btn-group">
-<button class="btn btn-primary" ng-click="reply()" title="Reply" ng-if="key"><span class="glyphicon glyphicon-edit"></span> Reply</button>
+<button class="btn btn-primary" ng-click="reply()" title="Reply" ng-if="post.rev"><span class="glyphicon glyphicon-edit"></span> Reply</button>
 </div>
 <div class="btn-group">
-<a class="btn btn-default" href="#/put/{{key}}" title="Edit" ng-if="key"><span class="glyphicon glyphicon-edit"></span> Edit</a>
+<a class="btn btn-default" href="#/:/{{key}}" title="Edit" ng-if="key"><span class="glyphicon glyphicon-edit"></span> Edit</a>
 <button class="btn btn-default" ng-click="show_raw()" ng-if="post.rev" title="Show Raw"><span class="glyphicon glyphicon-new-window"></span> Source</button>
 </div>
 </div>
@@ -130,13 +130,13 @@
 </script>
 
 <script type="text/ng-template" id="post.html">
-<div class="panel panel-default">
+<div class="panel panel-default post">
   <div class="panel-heading">
     <h1 class="panel-title">{{title}}</h1>
+    <span ng-show="authors" class="post-authors"><span ng-repeat="author in authors"><a href="#/@/user:{{author}}" class="label label-{{$index == 0 && 'primary' || 'primary'}}">@{{author}}</a> </span></span>
+    <span ng-show="tags" class="post-tags"><span ng-repeat="tag in tags"><a href="#/{{tag}}" class="label label-info">/{{tag}}</a> </span></span>
     <small>
-    <span ng-show="authors" class="post-authors">by: <span ng-repeat="author in authors"><a href="#/show/user:{{author}}">{{author}}</a> </span></span>
-    <span ng-show="tags" class="post-tags">in: <span ng-repeat="tag in tags"><a href="#/list/{{tag}}">{{tag}}</a> </span></span>
-    <span class="post-timestamp">{{timestamp}}, {{key}} rev {{rev}}</span>
+    <span class="post-timestamp">{{timestamp}} <a href="#/@/{{key}}">{{key}}</a> rev {{rev}}</span>
     </small>
   </div>
   <div class="panel-body">
@@ -144,6 +144,10 @@
     <pre ng-bind="source" ng-if="!body" class="post-source"></pre>
   </div>
 </div>
+</script>
+
+<script type="text/ng-template" id="404.html">
+    <p>404 page not found
 </script>
 
 </body>

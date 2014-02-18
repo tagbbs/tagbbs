@@ -2,46 +2,49 @@ var TagBBS = angular.module("TagBBS", ["ngRoute", "ngProgressLite"]);
 
 TagBBS.config(function($routeProvider, $locationProvider) {
     $routeProvider
-    .when("/login", {
+    .when("/_/login", {
         templateUrl: "login.html",
         controller: "Login"
     })
-    .when("/logout", {
+    .when("/_/logout", {
         templateUrl: "logout.html",
         controller: "Logout"
     })
-    .when("/register", {
+    .when("/_/register", {
         templateUrl: "register.html",
         controller: "Register"
     })
-    .when("/list/:query", {
+    .when("/:/:key?", {
+        templateUrl: "put.html",
+        controller: "Put"
+    })
+    .when("/:query/:key", {
+        templateUrl: "show.html",
+        controller: "Show"
+    })
+    .when("/:query", {
         templateUrl: "list.html",
         controller: "List",
         reloadOnSearch: false
     })
-    .when("/show/:query?/:key", {
-        templateUrl: "show.html",
-        controller: "Show"
-    })
-    .when("/put/:key?", {
-        templateUrl: "put.html",
-        controller: "Put"
-    })
-    .otherwise({redirectTo: "/login"});
+    .otherwise({
+        templateUrl: "404.html"
+    });
 
     $locationProvider.html5Mode(false);
 })
 .controller("MainCtrl", function($scope, $location, $route, bbs) {
     $scope.user = "";
+    $scope.homepage = "/@/post:0";
     $scope.setUser = function(user) {
         $scope.user = user;
     };
     if (!bbs.session()) {
-        if ($location.path() != "/login" && $location.path() != "/logout")
-            localStorage.returnPath = $location.path();
+        if ($location.path() != "/_/login" && $location.path() != "/_/logout")
+            localStorage.returnPath = $location.url();
         else
             localStorage.returnPath = "";
-        $location.url("/login");
+        $location.url("/_/login");
     }
     bbs.version().success(function(d) {
         $scope.name = d.result.name;
@@ -55,10 +58,10 @@ TagBBS.config(function($routeProvider, $locationProvider) {
     var redirect = function(d) {
         if (d.result) {
             if (localStorage.returnPath) {
-                $location.path(localStorage.returnPath);
+                $location.url(localStorage.returnPath);
                 localStorage.returnPath = "";
             } else {
-                $location.url("/list/sysop");
+                $location.url($scope.homepage);
             }
         }
     }
@@ -94,7 +97,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         } else {
             localStorage.sid = "";
             $scope.setUser("");
-            $location.url("/login");
+            $location.url("/_/login");
         }
     });
 })
@@ -107,11 +110,11 @@ TagBBS.config(function($routeProvider, $locationProvider) {
     $scope.posts = [];
 
     $scope.newHandQuery = function() {
-        $location.url("/list/" + $scope.query);
+        $location.url("/" + $scope.query);
         $route.reload();
     };
     $scope.put = function() {
-        $location.url("/put").search({tags: $scope.tags});
+        $location.url("/:").search({tags: $scope.tags});
     };
 
     var parsed = {}; // dirty hack to prevent double refresh
@@ -183,7 +186,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
     };
     $scope.reply = function() {
         var post = $scope.post;
-        $location.url("/put").search({
+        $location.url("/:").search({
             title: post.header.title.substring(0,3) == 'Re:' && post.header.title || 'Re: ' + post.header.title,
             reply: $scope.key,
             thread: post.header.thread || $scope.key,
@@ -191,6 +194,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         });
     };
     $scope.query = function() {
+        if ($routeParams.query == '@') return null;
         return $routeParams.query;
     };
     $scope.thread = function() {
@@ -208,7 +212,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
                 }, 2000);
                 return;
             } else {
-                $location.url("/show/" + q + "/" + posts[posts.length-1].key);
+                $location.url("/" + q + "/" + posts[posts.length-1].key);
             }
         });
     };
@@ -223,7 +227,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
                 }, 2000);
                 return;
             } else {
-                $location.url("/show/" + q + "/" + posts[0].key);
+                $location.url("/" + q + "/" + posts[0].key);
             }
         });
     };
@@ -275,7 +279,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
                 $scope.error = d.error;
             } else if (d.result) {
                 var q = bbs.parse($scope.content).header.thread || d.result;
-                $location.url("/show/" + q + "/" + d.result);
+                $location.url("/" + q + "/" + d.result);
             }
         })
     };
