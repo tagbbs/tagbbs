@@ -87,7 +87,7 @@
         <a href="#/{{query}}/{{post.key}}">
             <span class="post-key">{{post.key}}</span><span class="post-title">{{post.title}}</span>
         </a>
-        <a class="post-author" href="#/@/user:{{post.authors.0}}">@{{post.authors.0}}</a>
+        <a class="post-author" href="#/@/user:{{post.authors.0}}"><span ng-if="post.authors.0">@{{post.authors.0}}</span></a>
         <a class="post-tag" ng-repeat="tag in post.tags" href="#/{{tag}}">#{{tag}}</a>
     </li>
 </ul>
