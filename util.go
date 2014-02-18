@@ -3,6 +3,7 @@ package tagbbs
 import (
 	"crypto"
 	"encoding/hex"
+	"strconv"
 )
 
 func check(err error) {
@@ -17,4 +18,8 @@ func passhash(user, pass string) string {
 	h.Write([]byte("TESTING" + user + "|" + pass + "|" + user + "TESTING"))
 	x := h.Sum(nil)
 	return hex.EncodeToString(x)
+}
+
+func postkey(id int64) string {
+	return "post:" + strconv.FormatInt(id, 16)
 }

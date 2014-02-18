@@ -119,7 +119,7 @@ func (b *BBS) RebuildIndex() {
 	// gather tags
 	var allNames, tmp SortedString
 	for i = 0; i < nextid; i++ {
-		key := "post:" + strconv.FormatInt(i, 16)
+		key := postkey(i)
 		p, err := b.Get(key, SuperUser)
 		checklog(err)
 		names := analyze(key, p)
@@ -138,7 +138,7 @@ func (b *BBS) RebuildIndex() {
 	// re-add all posts
 	var count int64
 	for i = 0; i < nextid; i++ {
-		key := "post:" + strconv.FormatInt(i, 16)
+		key := postkey(i)
 		p, err := b.Get(key, SuperUser)
 		checklog(err)
 		b.indexReplace(key, Post{}, p)

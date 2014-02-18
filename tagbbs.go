@@ -102,7 +102,7 @@ func (b *BBS) allow(key string, post Post, user string, write bool) bool {
 					log.Println(err)
 					return false
 				}
-				return postid < nextid
+				return postid < nextid && postkey(postid) == key
 			case "user":
 				return parts[1] == user
 			}
@@ -173,7 +173,7 @@ func (b *BBS) NewPostKey() string {
 		key    string
 	)
 	check(b.meta("nextid", &nextid, func(v interface{}) bool {
-		key = "post:" + strconv.FormatInt(nextid, 16)
+		key = postkey(nextid)
 		nextid++
 		return true
 	}))
