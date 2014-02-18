@@ -350,7 +350,8 @@ return {
                 str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
                 return str.join("&");
             },
-            data: data
+            data: data,
+            timeout: 20000
         });
         return promise;
     };
