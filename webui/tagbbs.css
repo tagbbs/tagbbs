@@ -91,25 +91,25 @@ ul.posts-listing .post-key {
   padding-right: 5px;
 }
 
-ul.posts-listing .post-title {
+ul.posts-listing .post-title, ul.posts-listing .post-author {
   display: inline-block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  vertical-align: bottom; /* Chrome render error.  */
+}
+
+ul.posts-listing .post-title {
   font-size: 14px;
   width: 50%;
   max-width: 300px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 ul.posts-listing .post-author {
-  display: inline-block;
   margin-left: 10px;
   color: gray;
   font-size: 12px;
   width: 60px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 ul.posts-listing .post-tag {
