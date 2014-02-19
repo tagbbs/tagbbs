@@ -20,6 +20,8 @@ import (
 var (
 	flagDB     = flag.String("db", "mysql://bbs:bbs@/bbs?parseTime=true", "connection string")
 	flagListen = flag.String("listen", ":8023", "address to listen on")
+	flagCert   = flag.String("cert", "", "HTTPS: Certificate")
+	flagKey    = flag.String("key", "", "HTTPS: Key")
 
 	bbs *tagbbs.BBS
 )
@@ -198,7 +200,6 @@ func main() {
 	log.Println("initializing BBS")
 	bbsinit()
 
-	log.Println("listening on " + *flagListen)
 	http.HandleFunc("/login", api(nil))
 	http.HandleFunc("/logout", api(nil))
 	http.HandleFunc("/version", api(nil))
@@ -206,5 +207,12 @@ func main() {
 	http.HandleFunc("/list", api(list))
 	http.HandleFunc("/get", api(get))
 	http.HandleFunc("/put", api(put))
-	panic(http.ListenAndServe(*flagListen, nil))
+
+	if len(*flagCert) > 0 {
+		log.Println("listening on " + *flagListen + " with HTTPS")
+		panic(http.ListenAndServeTLS(*flagListen, *flagCert, *flagKey, nil))
+	} else {
+		log.Println("listening on " + *flagListen + " without HTTPS")
+		panic(http.ListenAndServe(*flagListen, nil))
+	}
 }
