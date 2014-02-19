@@ -15,6 +15,10 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         templateUrl: "register.html",
         controller: "Register"
     })
+    .when("/_/passwd", {
+        templateUrl: "passwd.html",
+        controller: "Register"
+    })
     .when("/:/:key?", {
         templateUrl: "put.html",
         controller: "Put"
@@ -41,11 +45,13 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         $scope.user = user;
     };
     if (!bbs.session()) {
-        if ($location.path() != "/_/login" && $location.path() != "/_/logout")
+        var metapath = $location.path().split("/")[1] == "_";
+        if (!metapath) {
             localStorage.returnPath = $location.url();
-        else
+            $location.url("/_/login");
+        } else {
             localStorage.returnPath = "";
-        $location.url("/_/login");
+        }
     }
     bbs.version().success(function(d) {
         $scope.name = d.result.name;
@@ -55,6 +61,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
 .controller("Login", function($scope, $location, bbs) {
     $scope.user = "";
     $scope.pass = "";
+    $scope.pass2 = "";
     $scope.message = "";
     var redirect = function(d) {
         if (d.result) {
@@ -65,7 +72,7 @@ TagBBS.config(function($routeProvider, $locationProvider) {
                 $location.url($scope.homepage);
             }
         }
-    }
+    };
     $scope.submit = function() {
         bbs.login($scope.user, $scope.pass).success(function(d) {
             if (d.result) {
@@ -96,14 +103,46 @@ TagBBS.config(function($routeProvider, $locationProvider) {
         if (d.error) {
             $scope.error = d.error;
         } else {
-            localStorage.sid = "";
-            $scope.setUser("");
             $location.url("/_/login");
         }
+        localStorage.sid = "";
+        $scope.setUser("");
     });
 })
-.controller("Register", function($scope) {
+.controller("Register", function($scope, $location, bbs) {
+    $scope.user = "";
+    $scope.oldpass = "";
+    $scope.pass = "";
+    $scope.pass2 = "";
 
+    $scope.message = "";
+    $scope.submit = function() {
+        if ($scope.pass != $scope.pass2) {
+            $scope.message = "Password Mismatch!";
+            return;
+        }
+        bbs.login($scope.user, $scope.oldpass).success(function(d) {
+            if (d.result) {
+                localStorage.sid = d.result;
+                $scope.setUser($scope.user);
+                bbs.register().success(function() {
+                    bbs.passwd($scope.pass).success(function(d) {
+                        if (d.error) {
+                            $scope.message = "Error setting password: " + d.error;
+                        }
+                        $location.url($scope.homepage);
+                    })
+                })
+            } else {
+                if ($scope.oldpass) {
+                    $scope.message = "Wrong User or old Password!";
+                } else {
+                    $scope.message = "Registration failed, probably this id has been taken.";
+                }
+                console.log(d.error);
+            }
+        })
+    };
 })
 .controller("List", function($scope, $routeParams, $location, $route, $timeout, bbs) {
     $scope.query = $routeParams.query || "";
@@ -374,6 +413,12 @@ return {
         who: function() {
             return api("who");
         },
+        register: function() {
+            return api("register");
+        },
+        passwd: function(pass) {
+            return api("passwd", {pass: pass});
+        },
         list: function(query) {
             return api("list", {query: query});
         },
@@ -446,7 +491,7 @@ return {
         };
     });
 })
-.value("serviceEndpoint", location.protocol + "//" + location.hostname + ":8023")
+.value("serviceEndpoint", "https://secure.thinxer.com:8023")
 .factory("isMobile", function() {
     var isMobile = {
         Android: function() {

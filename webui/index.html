@@ -33,6 +33,7 @@
         <li>&nbsp;</li>
         <li ng-hide="user"><a href="#/_/login"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
         <li ng-hide="user"><a href="#/_/register"> Register</a></li>
+        <li ng-hide="user"><a href="#/_/passwd"> Password</a></li>
         <li ng-show="user"><a href="#/@/user:{{user}}" title="my profile"><span class="glyphicon glyphicon-user"></span> <span class="text">{{user}}<span></a>
         <li ng-show="user"><a href="#/_/logout"><span class="glyphicon glyphicon-log-out"></span> <span class="text">Logout<span></a></li>
     </ul>
@@ -57,8 +58,47 @@
 </script>
 
 <script type="text/ng-template" id="register.html">
-<p>Not yet implemented in the web interface. Please use SSH instead.
-<p>Or, you can try login with Username: test and Password: test.
+<form role="form" ng-submit="submit()" class="login center-block">
+    <p>Register
+    <div class="alert alert-warning" ng-show="message">{{message}}</div>
+    <div class="form-group">
+    <label>User</label>
+    <input type="text" class="form-control" placeholder="user id" ng-model="user">
+    </div>
+    <div class="form-group">
+    <label>Password</label>
+    <input type="password" class="form-control" placeholder="password" ng-model="pass">
+    </div>
+    <div class="form-group">
+    <label>Type Again</label>
+    <input type="password" class="form-control" placeholder="password" ng-model="pass2">
+    </div>
+    <button type="submit" class="btn btn-default">Register</button>
+</form>
+</script>
+
+<script type="text/ng-template" id="passwd.html">
+<form role="form" ng-submit="submit()" class="login center-block">
+    <p>Change Password
+    <div class="alert alert-warning" ng-show="message">{{message}}</div>
+    <div class="form-group">
+    <label>User</label>
+    <input type="text" class="form-control" placeholder="user id" ng-model="user">
+    </div>
+    <div class="form-group">
+    <label>Old Password</label>
+    <input type="password" class="form-control" placeholder="password" ng-model="oldpass">
+    </div>
+    <div class="form-group">
+    <label>Password</label>
+    <input type="password" class="form-control" placeholder="password" ng-model="pass">
+    </div>
+    <div class="form-group">
+    <label>Type Again</label>
+    <input type="password" class="form-control" placeholder="password" ng-model="pass2">
+    </div>
+    <button type="submit" class="btn btn-default">Change</button>
+</form>
 </script>
 
 <script type="text/ng-template" id="logout.html">

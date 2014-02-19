@@ -187,7 +187,6 @@ func (b *BBS) NewUser(user string) error {
 	)
 
 	if err2 := b.meta("users", users, func(v interface{}) bool {
-		users.Sort() // temporary fix
 		ok := users.Insert(user)
 		if !ok {
 			err = ErrUserExists
@@ -208,13 +207,13 @@ func (b *BBS) SetUserPass(user, pass string) error {
 	})
 }
 
-func (b *BBS) Auth(user, pass string) bool {
+func (b *BBS) AuthUserPass(user, pass string) bool {
 	var phrase string
 	if err := b.modify("userpass:"+user, &phrase, nil); err != nil {
 		log.Println("Error authenticating:", err)
 		return false
 	}
-	return len(phrase) == 0 || passhash(user, pass) == phrase
+	return (len(pass) == 0 && len(phrase) == 0) || (passhash(user, pass) == phrase)
 }
 
 func (b *BBS) init() {

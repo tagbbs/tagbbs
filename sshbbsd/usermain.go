@@ -32,7 +32,7 @@ func bbsinit() {
 }
 
 func userauth(user string, password string) bool {
-	return bbs.Auth(user, password)
+	return bbs.AuthUserPass(user, password)
 }
 
 func userpubkey(user string, algo string, pubkey []byte) bool {

@@ -53,6 +53,15 @@ func who(api, user string, params url.Values) (interface{}, error) {
 	return user, nil
 }
 
+func register(api, user string, params url.Values) (interface{}, error) {
+	return nil, bbs.NewUser(user)
+}
+
+func passwd(api, user string, params url.Values) (interface{}, error) {
+	pass := params.Get("pass")
+	return nil, bbs.SetUserPass(user, pass)
+}
+
 func list(api, user string, params url.Values) (interface{}, error) {
 	ids, parsed, err := bbs.Query(params.Get("query"))
 	if err != nil {
@@ -119,7 +128,6 @@ func api(handler apiHandler) func(w http.ResponseWriter, r *http.Request) {
 		// Allow CORS
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 		if r.Method == "OPTIONS" {
-			w.Header().Add("Access-Control-Allow-Origin", "*")
 			w.Header().Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 			w.Header().Add("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
 			w.Header().Add("Access-Control-Max-Age", "86400")
@@ -152,7 +160,7 @@ func api(handler apiHandler) func(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				panic(err)
 			}
-			if bbs.Auth(user, pass) {
+			if bbs.AuthUserPass(user, pass) {
 				sid := hex.EncodeToString(randbits)
 				sessionsMutex.Lock()
 				sessions[sid] = user
@@ -203,6 +211,8 @@ func main() {
 	http.HandleFunc("/logout", api(nil))
 	http.HandleFunc("/version", api(nil))
 	http.HandleFunc("/who", api(who))
+	http.HandleFunc("/register", api(register))
+	http.HandleFunc("/passwd", api(passwd))
 	http.HandleFunc("/list", api(list))
 	http.HandleFunc("/get", api(get))
 	http.HandleFunc("/put", api(put))
