@@ -115,7 +115,9 @@ func put(api, user string, params url.Values) (interface{}, error) {
 
 func api(handler apiHandler) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println(r.RemoteAddr, r.URL.Path, r.ContentLength)
 		// Allow CORS
+		w.Header().Add("Access-Control-Allow-Origin", "*")
 		if r.Method == "OPTIONS" {
 			w.Header().Add("Access-Control-Allow-Origin", "*")
 			w.Header().Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -129,10 +131,7 @@ func api(handler apiHandler) func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, "Method not allowed")
 			return
 		}
-
-		w.Header().Add("Access-Control-Allow-Origin", "*")
 		r.ParseForm()
-		log.Println(r.URL.Path, r.Form)
 
 		var (
 			result interface{}
