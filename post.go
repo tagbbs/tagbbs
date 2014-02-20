@@ -1,17 +1,15 @@
+// Simple Post Parsing.
+
 package tagbbs
 
 import (
 	"fmt"
-	"time"
 
+	"github.com/thinxer/tagbbs/rkv"
 	"launchpad.net/goyaml"
 )
 
-type Post struct {
-	Rev       int64
-	Timestamp time.Time
-	Content   []byte
-}
+type Post rkv.Value
 
 type FrontMatter struct {
 	Title   string
@@ -23,7 +21,7 @@ type FrontMatter struct {
 
 func (p *Post) FrontMatter() *FrontMatter {
 	var fm FrontMatter
-	if err := goyaml.Unmarshal(p.Content, &fm); err != nil {
+	if err := p.UnmarshalTo(&fm); err != nil {
 		return nil
 	}
 	return &fm

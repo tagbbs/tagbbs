@@ -1,21 +1,31 @@
-package tagbbs
+/*
+Key Value Storage with Revision
+*/
+package rkv
 
 import (
 	"errors"
 	"strings"
+	"time"
 )
 
 var (
 	ErrRevNotMatch = errors.New("Revision Not Match")
 )
 
+type Value struct {
+	Rev       int64
+	Timestamp time.Time
+	Content   []byte
+}
+
 type Storage interface {
 	// Get the Post of given Key.
-	Get(key string) (Post, error)
+	Get(key string) (Value, error)
 	// Set the Post to the given Key.
 	// Note that the revision of the new post must be increased by 1 from the old post.
 	// If the length of the Content of the Post is zero, the post is considered safe to be deleted.
-	Put(key string, p Post) error
+	Put(key string, p Value) error
 }
 
 // NewStore is a helper method for creating a built-in storage.

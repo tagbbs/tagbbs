@@ -1,10 +1,10 @@
-package tagbbs
+package rkv
 
 import "time"
 
-type MemStore map[string]Post
+type MemStore map[string]Value
 
-func (b MemStore) Get(key string) (Post, error) {
+func (b MemStore) Get(key string) (Value, error) {
 	p := b[key]
 	content := make([]byte, len(p.Content))
 	copy(content, p.Content)
@@ -12,7 +12,7 @@ func (b MemStore) Get(key string) (Post, error) {
 	return p, nil
 }
 
-func (m MemStore) Put(key string, np Post) error {
+func (m MemStore) Put(key string, np Value) error {
 	post := m[key]
 	if post.Rev+1 != np.Rev {
 		return ErrRevNotMatch

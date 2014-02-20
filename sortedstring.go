@@ -2,6 +2,8 @@ package tagbbs
 
 import "sort"
 
+// SortedString is a list of sorted strings, mainly for indexing purpose.
+// Note that the order of strings are defined by (len, content).
 type SortedString []string
 
 func strcmp(a, b string) bool {

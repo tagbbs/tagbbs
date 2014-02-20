@@ -41,12 +41,7 @@ type M map[string]interface{}
 type apiHandler func(api, user string, params url.Values) (interface{}, error)
 
 func bbsinit() {
-	store, err := tagbbs.NewStore(*flagDB)
-	if err != nil {
-		panic(err)
-	}
-	bbs = tagbbs.NewBBS(store)
-	log.Println(bbs.Version())
+	bbs = tagbbs.NewBBSFromString(*flagDB)
 }
 
 func who(api, user string, params url.Values) (interface{}, error) {

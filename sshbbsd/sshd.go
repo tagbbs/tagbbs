@@ -11,6 +11,7 @@ import (
 
 var (
 	flagListen = flag.String("listen", ":1481", "Address to listen on")
+	flagKey    = flag.String("key", "id_rsa", "Private Key for SSH Server")
 )
 
 func main() {
@@ -30,7 +31,7 @@ func main() {
 	}
 
 	// Load server certificate.
-	pemBytes, err := ioutil.ReadFile("id_rsa")
+	pemBytes, err := ioutil.ReadFile(*flagKey)
 	if err != nil {
 		log.Fatal("Failed to load private key:", err)
 	}

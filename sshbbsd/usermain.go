@@ -23,12 +23,7 @@ var (
 )
 
 func bbsinit() {
-	store, err := tagbbs.NewStore(*flagDB)
-	if err != nil {
-		panic(err)
-	}
-	bbs = tagbbs.NewBBS(store)
-	log.Println(bbs.Version())
+	bbs = tagbbs.NewBBSFromString(*flagDB)
 }
 
 func userauth(user string, password string) bool {

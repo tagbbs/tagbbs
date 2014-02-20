@@ -1,3 +1,5 @@
+// Simple index upon the key value store.
+
 package tagbbs
 
 import (

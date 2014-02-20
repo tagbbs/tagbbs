@@ -1,4 +1,4 @@
-package tagbbs
+package rkv
 
 import (
 	"database/sql"
@@ -35,8 +35,8 @@ func NewSQLStore(driver, source, table string) (*SQLStore, error) {
 	return &SQLStore{db, table}, nil
 }
 
-func (s *SQLStore) Get(key string) (Post, error) {
-	var p Post
+func (s *SQLStore) Get(key string) (Value, error) {
+	var p Value
 	err := s.db.QueryRow(fmt.Sprintf("SELECT name, rev, timestamp, content from %s WHERE name = ?", s.table), key).Scan(&key, &p.Rev, &p.Timestamp, &p.Content)
 	if err == sql.ErrNoRows {
 		err = nil
@@ -44,7 +44,7 @@ func (s *SQLStore) Get(key string) (Post, error) {
 	return p, err
 }
 
-func (s *SQLStore) Put(key string, np Post) error {
+func (s *SQLStore) Put(key string, np Value) error {
 	// try update first
 	r, err := s.db.Exec(fmt.Sprintf("UPDATE %s SET rev=?, content=? WHERE name=? and rev=?", s.table), np.Rev, np.Content, key, np.Rev-1)
 	if err != nil {

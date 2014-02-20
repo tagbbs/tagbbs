@@ -1,3 +1,5 @@
+// Compilation Time Configuration.
+
 package tagbbs
 
 const (
