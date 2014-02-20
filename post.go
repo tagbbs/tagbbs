@@ -5,7 +5,7 @@ package tagbbs
 import (
 	"fmt"
 
-	"github.com/thinxer/tagbbs/rkv"
+	"github.com/tagbbs/tagbbs/rkv"
 	"launchpad.net/goyaml"
 )
 

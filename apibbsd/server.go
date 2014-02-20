@@ -14,7 +14,7 @@ import (
 	"sync"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/thinxer/tagbbs"
+	"github.com/tagbbs/tagbbs"
 )
 
 var (

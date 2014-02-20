@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/thinxer/tagbbs/rkv"
+	"github.com/tagbbs/tagbbs/rkv"
 )
 
 var (

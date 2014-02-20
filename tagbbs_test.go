@@ -3,11 +3,12 @@ package tagbbs
 import (
 	"bytes"
 	"testing"
+
+	"github.com/tagbbs/tagbbs/rkv"
 )
 
 func TestMemBBS(t *testing.T) {
-	store := MemStore{}
-	b := NewBBS(store)
+	b := NewBBSFromString("mem://")
 
 	p1 := Post{}
 	p1.Rev = 1
@@ -42,7 +43,7 @@ Hello World!
 		t.Fatal(err)
 	}
 	// Test Revision
-	if err := b.Put(p1key, p1, userA); err != ErrRevNotMatch {
+	if err := b.Put(p1key, p1, userA); err != rkv.ErrRevNotMatch {
 		t.Fatal(err)
 	}
 
@@ -88,10 +89,5 @@ Hello World!
 		t.Fatal(err)
 	} else if len(list) != 1 {
 		t.Fatal("Wrong number of posts returned.", list)
-	}
-
-	t.Log("Contents of the storage: ")
-	for k, v := range store {
-		t.Log(k, v.String())
 	}
 }

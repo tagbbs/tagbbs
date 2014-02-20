@@ -4,7 +4,7 @@ import (
 	"flag"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/thinxer/tagbbs"
+	"github.com/tagbbs/tagbbs"
 )
 
 var flagDB = flag.String("db", "mysql://bbs:bbs@/bbs?parseTime=true", "connection string")

@@ -10,7 +10,7 @@ import (
 
 	"code.google.com/p/go.crypto/ssh"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/thinxer/tagbbs"
+	"github.com/tagbbs/tagbbs"
 )
 
 var (
