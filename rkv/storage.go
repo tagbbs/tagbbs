@@ -34,6 +34,8 @@ func NewStore(source string) (store Storage, err error) {
 	driver := parts[0]
 	if driver == "mysql" {
 		store, err = NewSQLStore(driver, parts[1], "kvs")
+	} else if driver == "redis" {
+		store, err = NewRediStore(parts[1])
 	} else if driver == "mem" {
 		store = MemStore{}
 	} else {

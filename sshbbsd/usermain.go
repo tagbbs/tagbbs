@@ -163,6 +163,9 @@ func usermain(user string, ch ssh.Channel) {
 				}
 			}
 			term.SetPrompt("")
+			if post.Rev > 0 {
+				term.Pokay("Editing ", key, ", rev: ", post.Rev)
+			}
 			term.Pokay("Type EOF to end the file. Type DISCARD to cancel.")
 			content, err := readutil(serverTerm, "EOF")
 			if err == nil {
