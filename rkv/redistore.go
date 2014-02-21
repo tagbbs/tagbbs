@@ -14,6 +14,7 @@ func NewRediStore(addr string, db int) (*RediStore, error) {
 	pool := redis.NewPool(func() (redis.Conn, error) {
 		conn, err := redis.DialTimeout("tcp", addr, 10*time.Second, 10*time.Second, 10*time.Second)
 		if err == nil {
+			//conn = redis.NewLoggingConn(conn, log.New(os.Stdout, "!", 0), fmt.Sprint(rand.Intn(900)+100))
 			err = conn.Send("SELECT", db)
 		}
 		return conn, err
@@ -52,7 +53,7 @@ func (r *RediStore) Put(key string, p Value) error {
 	}
 	c.Send("MULTI")
 	c.Send("HMSET", key, "rev", p.Rev, "ts", time.Now().UnixNano(), "c", p.Content)
-	err = c.Send("EXEC")
+	_, err = redis.Values(c.Do("EXEC"))
 	if err == redis.ErrNil {
 		return ErrRevNotMatch
 	}

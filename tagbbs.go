@@ -129,7 +129,6 @@ begin:
 			return err
 		}
 	}
-
 	// mutate value
 	if mutate == nil || !mutate(value) {
 		return nil

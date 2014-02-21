@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/tagbbs/tagbbs"
 )
 
@@ -42,7 +43,10 @@ func batchput(bbs *tagbbs.BBS) {
 		p := tagbbs.Post{}
 		p.Rev = 1
 		p.Content = SAMPLE_POST
-		bbs.Put(key, p, "u1")
+		err := bbs.Put(key, p, "u1")
+		if err != nil {
+			log.Panicln(key, err)
+		}
 	}
 	dur := time.Now().Sub(start)
 	log.Println("Duration: ", dur, ", Average: ", dur/time.Duration(count))
@@ -74,8 +78,9 @@ func main() {
 
 	start := time.Now()
 
-	wg.Add(10)
-	for i := 0; i < 10; i++ {
+	threads := 10
+	wg.Add(threads)
+	for i := 0; i < threads; i++ {
 		go batchput(bbs)
 	}
 	wg.Wait()

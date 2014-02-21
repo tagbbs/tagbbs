@@ -46,7 +46,7 @@ func NewStore(source string) (store Storage, err error) {
 		}
 		store, err = NewRediStore(u.Host, db)
 	case "mem":
-		store = MemStore{}
+		store = NewMemStore()
 	default:
 		panic("unknown driver: " + u.Scheme)
 	}
