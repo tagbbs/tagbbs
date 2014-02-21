@@ -17,6 +17,7 @@ do
     GOOS=$os go build -ldflags "-X github.com/tagbbs/tagbbs.version $RELEASE" github.com/tagbbs/tagbbs/apibbsd
     GOOS=$os go build -ldflags "-X github.com/tagbbs/tagbbs.version $RELEASE" github.com/tagbbs/tagbbs/sshbbsd
     GOOS=$os go build -ldflags "-X github.com/tagbbs/tagbbs.version $RELEASE" github.com/tagbbs/tagbbs/fsck
+    GOOS=$os go build -ldflags "-X github.com/tagbbs/tagbbs.version $RELEASE" github.com/tagbbs/tagbbs/bench
     cd ..
     ln -sfvn $NAME-$os-$RELEASE $NAME-$os
     tar zcf $NAME-$os-$RELEASE.tgz $NAME-$os-$RELEASE

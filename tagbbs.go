@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/tagbbs/tagbbs/rkv"
@@ -93,9 +92,7 @@ func (b *BBS) Put(key string, post Post, user string) error {
 	if err := b.store.Put(key, rkv.Value(post)); err != nil {
 		return err
 	}
-	if strings.HasPrefix(key, "post:") {
-		b.indexReplace(key, Post(oldpost), Post(post))
-	}
+	b.indexReplace(key, Post(oldpost), Post(post))
 	return nil
 }
 

@@ -5,7 +5,8 @@ package rkv
 
 import (
 	"errors"
-	"strings"
+	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -30,16 +31,24 @@ type Storage interface {
 
 // NewStore is a helper method for creating a built-in storage.
 func NewStore(source string) (store Storage, err error) {
-	parts := strings.SplitN(source, "://", 2)
-	driver := parts[0]
-	if driver == "mysql" {
-		store, err = NewSQLStore(driver, parts[1], "kvs")
-	} else if driver == "redis" {
-		store, err = NewRediStore(parts[1])
-	} else if driver == "mem" {
+	u, err := url.Parse(source)
+	if err != nil {
+		return
+	}
+
+	switch u.Scheme {
+	case "mysql":
+		store, err = NewSQLStore(u.Scheme, u.User.String()+"@"+u.Host+u.RequestURI(), "kvs")
+	case "redis":
+		var db int
+		if len(u.Path) > 0 {
+			db, err = strconv.Atoi(u.Path[1:])
+		}
+		store, err = NewRediStore(u.Host, db)
+	case "mem":
 		store = MemStore{}
-	} else {
-		panic("unknown driver: " + driver)
+	default:
+		panic("unknown driver: " + u.Scheme)
 	}
 	return store, err
 }

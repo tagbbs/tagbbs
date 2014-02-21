@@ -10,9 +10,13 @@ type RediStore struct {
 	pool *redis.Pool
 }
 
-func NewRediStore(addr string) (*RediStore, error) {
+func NewRediStore(addr string, db int) (*RediStore, error) {
 	pool := redis.NewPool(func() (redis.Conn, error) {
-		return redis.DialTimeout("tcp", addr, 10*time.Second, 10*time.Second, 10*time.Second)
+		conn, err := redis.DialTimeout("tcp", addr, 10*time.Second, 10*time.Second, 10*time.Second)
+		if err == nil {
+			err = conn.Send("SELECT", db)
+		}
+		return conn, err
 	}, 10)
 	return &RediStore{pool}, nil
 }
