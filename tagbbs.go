@@ -22,7 +22,11 @@ type BBS struct {
 func NewBBS(store rkv.Storage) *BBS {
 	b := &BBS{store: store}
 	b.init()
-	log.Println(b.Version())
+	name, version, err := b.Version()
+	if err != nil {
+		panic(err)
+	}
+	log.Println(name, version)
 	return b
 }
 
