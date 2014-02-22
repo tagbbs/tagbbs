@@ -52,3 +52,9 @@ func NewStore(source string) (store Storage, err error) {
 	}
 	return store, err
 }
+
+func NewScopedStore(source string, prefix string) (store Storage, err error) {
+	store, err = NewStore(source)
+	store = ScopedStore{store, prefix}
+	return
+}
