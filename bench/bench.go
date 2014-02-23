@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
+	"runtime/pprof"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -13,7 +15,9 @@ import (
 )
 
 var (
-	flagDB = flag.String("db", "mysql://bbs:bbs@/bbs?parseTime=true", "connection string")
+	flagDB         = flag.String("db", "mem://", "connection string")
+	flagCpuProfile = flag.String("cpuprofile", "", "write cpu profile to file")
+	flagMemProfile = flag.String("memprofile", "", "write memory profile to this file")
 )
 
 var SAMPLE_POST = []byte(`
@@ -71,6 +75,14 @@ func batchget(bbs *tagbbs.BBS) {
 
 func main() {
 	flag.Parse()
+	if *flagCpuProfile != "" {
+		f, err := os.Create(*flagCpuProfile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 
 	bbs := tagbbs.NewBBSFromString(*flagDB)
 	bbs.NewUser("u1")
@@ -90,4 +102,14 @@ func main() {
 	log.Println("Duration: ", dur, ", Average: ", dur/time.Duration(allCount))
 
 	batchget(bbs)
+
+	if *flagMemProfile != "" {
+		f, err := os.Create(*flagMemProfile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.WriteHeapProfile(f)
+		f.Close()
+		return
+	}
 }
