@@ -10,11 +10,14 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 	"sync"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/tagbbs/tagbbs"
+	"github.com/tagbbs/tagbbs/auth"
+	"github.com/tagbbs/tagbbs/rkv"
 )
 
 var (
@@ -23,11 +26,11 @@ var (
 	flagCert   = flag.String("cert", "", "HTTPS: Certificate")
 	flagKey    = flag.String("key", "", "HTTPS: Key")
 
-	bbs *tagbbs.BBS
+	bbs   *tagbbs.BBS
+	auths auth.AuthenticationList
 )
 
 var (
-	ErrAuthFailed   = errors.New("Authentication Failed")
 	ErrUnauthorized = errors.New("Unauthorized")
 )
 
@@ -42,6 +45,9 @@ type apiHandler func(api, user string, params url.Values) (interface{}, error)
 
 func bbsinit() {
 	bbs = tagbbs.NewBBSFromString(*flagDB)
+	auths = auth.AuthenticationList{
+		auth.Password{rkv.ScopedStore{bbs.Storage, "userpass:"}},
+	}
 }
 
 func who(api, user string, params url.Values) (interface{}, error) {
@@ -54,7 +60,8 @@ func register(api, user string, params url.Values) (interface{}, error) {
 
 func passwd(api, user string, params url.Values) (interface{}, error) {
 	pass := params.Get("pass")
-	return nil, bbs.SetUserPass(user, pass)
+	pw := auths.Of(reflect.TypeOf(auth.Password{})).(auth.Password)
+	return nil, pw.Set(user, pass)
 }
 
 func list(api, user string, params url.Values) (interface{}, error) {
@@ -149,20 +156,20 @@ func api(handler apiHandler) func(w http.ResponseWriter, r *http.Request) {
 				"version": ver,
 			}
 		case "/login":
-			user, pass := r.Form.Get("user"), r.Form.Get("pass")
-			randbits := make([]byte, 16)
-			_, err = rand.Read(randbits)
-			if err != nil {
-				panic(err)
-			}
-			if bbs.AuthUserPass(user, pass) {
+			// r.Form should contain "user" and "pass"
+			var user string
+			user, err = auths.Auth(r.Form)
+			if err == nil {
+				randbits := make([]byte, 16)
+				_, err = rand.Read(randbits)
+				if err != nil {
+					panic(err)
+				}
 				sid := hex.EncodeToString(randbits)
 				sessionsMutex.Lock()
 				sessions[sid] = user
 				sessionsMutex.Unlock()
 				result, err = sid, nil
-			} else {
-				result, err = nil, ErrAuthFailed
 			}
 		case "/logout":
 			sessionsMutex.Lock()

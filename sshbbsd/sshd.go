@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/url"
 
 	"code.google.com/p/go.crypto/ssh"
 )
@@ -23,10 +24,19 @@ func main() {
 	log.Println("initializing sshd")
 	config := &ssh.ServerConfig{
 		PasswordCallback: func(conn *ssh.ServerConn, user, pass string) bool {
-			return userauth(user, pass)
+			params := url.Values{}
+			params.Set("user", user)
+			params.Set("pass", pass)
+			_, err := auths.Auth(params)
+			return err == nil
 		},
 		PublicKeyCallback: func(conn *ssh.ServerConn, user, algo string, pubkey []byte) bool {
-			return userpubkey(user, algo, pubkey)
+			params := url.Values{}
+			params.Set("user", user)
+			params.Set("algo", algo)
+			params.Set("pubkey", string(pubkey))
+			_, err := auths.Auth(params)
+			return err == nil
 		},
 	}
 

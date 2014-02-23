@@ -6,16 +6,21 @@ import (
 	"flag"
 	"io"
 	"log"
+	"net/url"
+	"reflect"
 	"strings"
+	"github.com/tagbbs/tagbbs/rkv"
 
 	"code.google.com/p/go.crypto/ssh"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/tagbbs/tagbbs"
+	"github.com/tagbbs/tagbbs/auth"
 )
 
 var (
 	flagDB = flag.String("db", "mysql://bbs:bbs@/bbs?parseTime=true", "connection string")
 	bbs    *tagbbs.BBS
+	auths  auth.AuthenticationList
 )
 
 var (
@@ -24,24 +29,32 @@ var (
 
 func bbsinit() {
 	bbs = tagbbs.NewBBSFromString(*flagDB)
+	auths = auth.AuthenticationList{
+		auth.Password{rkv.ScopedStore{bbs.Storage, "userpass:"}},
+		ProfilePublicKeyAuth{bbs},
+	}
 }
 
-func userauth(user string, password string) bool {
-	return bbs.AuthUserPass(user, password)
+type ProfilePublicKeyAuth struct {
+	*tagbbs.BBS
 }
 
-func userpubkey(user string, algo string, pubkey []byte) bool {
+func (p ProfilePublicKeyAuth) Auth(params url.Values) (string, error) {
+	user := params.Get("user")
+	algo := params.Get("algo")
+	pubkey := []byte(params.Get("pubkey"))
+
 	type Profile struct {
 		AuthorizedKeys string `yaml:"authorized_keys"`
 	}
-	post, err := bbs.Get("user:"+user, user)
+	post, err := p.Get("user:"+user, user)
 	if err != nil {
-		return false
+		return "", err
 	}
 	profile := Profile{}
 	err = post.UnmarshalTo(&profile)
 	if err != nil {
-		return false
+		return "", err
 	}
 	keys := []byte(profile.AuthorizedKeys)
 	for {
@@ -51,10 +64,10 @@ func userpubkey(user string, algo string, pubkey []byte) bool {
 		)
 		pkey, _, _, keys, ok = ssh.ParseAuthorizedKey(keys)
 		if !ok {
-			return false
+			return "", auth.ErrNoMatchedPublicKey
 		}
 		if pkey.PublicKeyAlgo() == algo && bytes.Compare(ssh.MarshalPublicKey(pkey), pubkey) == 0 {
-			return true
+			return user, nil
 		}
 	}
 }
@@ -109,7 +122,8 @@ func usermain(user string, ch ssh.Channel) {
 			if pass1 != pass2 {
 				term.Perror("Password Mismatch")
 			} else {
-				term.PerrorIf(bbs.SetUserPass(user, pass1))
+				pw := auths.Of(reflect.TypeOf(auth.Password{})).(auth.Password)
+				term.PerrorIf(pw.Set(user, pass1))
 			}
 		case "who":
 			term.Println(user)

@@ -16,11 +16,11 @@ var (
 )
 
 type BBS struct {
-	store rkv.Storage
+	rkv.Storage
 }
 
 func NewBBS(store rkv.Storage) *BBS {
-	b := &BBS{store: store}
+	b := &BBS{Storage: store}
 	b.init()
 	name, version, err := b.Version()
 	if err != nil {
@@ -74,7 +74,7 @@ func (b *BBS) Version() (string, string, error) {
 
 // Get will return the post requested by the user, if the user is permitted.
 func (b *BBS) Get(key string, user string) (Post, error) {
-	p, err := b.store.Get(key)
+	p, err := b.Storage.Get(key)
 	if err != nil {
 		return Post{}, err
 	}
@@ -86,14 +86,14 @@ func (b *BBS) Get(key string, user string) (Post, error) {
 
 // Put will update the post and the index, if the user is permitted.
 func (b *BBS) Put(key string, post Post, user string) error {
-	oldpost, err := b.store.Get(key)
+	oldpost, err := b.Storage.Get(key)
 	if err != nil {
 		return err
 	}
 	if !b.allow(key, Post(oldpost), user, true) {
 		return ErrAccessDenied
 	}
-	if err := b.store.Put(key, rkv.Value(post)); err != nil {
+	if err := b.Storage.Put(key, rkv.Value(post)); err != nil {
 		return err
 	}
 	b.indexReplace(key, Post(oldpost), Post(post))
@@ -124,7 +124,7 @@ func (b *BBS) meta(key string, value interface{}, mutate func(v interface{}) boo
 func (b *BBS) modify(key string, value interface{}, mutate func(v interface{}) bool) error {
 begin:
 	// read value
-	p, err := b.store.Get(key)
+	p, err := b.Storage.Get(key)
 	if err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ begin:
 	}
 	p.Rev++
 	p.Timestamp = time.Now()
-	err = b.store.Put(key, p)
+	err = b.Storage.Put(key, p)
 	if err == rkv.ErrRevNotMatch {
 		goto begin
 	} else {
