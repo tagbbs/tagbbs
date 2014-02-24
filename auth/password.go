@@ -37,12 +37,16 @@ func (p Password) Auth(params url.Values) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var phrase string
-	json.Unmarshal(v.Content, &phrase)
-	if phrase != passhash(user, pass) {
-		return "", ErrAuthFailed
+	if v.Rev == 0 {
+		return user, nil
 	}
-	return user, nil
+	var phrase string
+	if err := json.Unmarshal(v.Content, &phrase); err == nil {
+		if phrase == passhash(user, pass) {
+			return user, nil
+		}
+	}
+	return "", ErrAuthFailed
 }
 
 // XXX need some improvements
