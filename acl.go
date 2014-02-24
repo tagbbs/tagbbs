@@ -29,8 +29,21 @@ func (b *BBS) NewUser(user string) error {
 
 // allow checks if the user if able to read or write.
 func (b *BBS) allow(key string, post Post, user string, write bool) bool {
+	// SuperUser or in SYSOP List
 	if user == SuperUser {
 		return true
+	} else {
+		p, err := b.Get("user:"+SuperUser, SuperUser)
+		if err != nil {
+			return false
+		}
+		if fm := p.FrontMatter(); fm != nil {
+			for _, a := range fm.Authors {
+				if a == user {
+					return true
+				}
+			}
+		}
 	}
 
 	users := &SortedString{}
