@@ -126,7 +126,11 @@ func put(api, user string, params url.Values) (interface{}, error) {
 
 func api(handler apiHandler) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println(r.RemoteAddr, r.URL.Path, r.ContentLength)
+		remoteIp := r.Header.Get("X-Real-IP")
+		if len(remoteIp) == 0 {
+			remoteIp = r.RemoteAddr
+		}
+		log.Println(remoteIp, r.URL.Path, r.ContentLength)
 		// Allow CORS
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 		if r.Method == "OPTIONS" {
