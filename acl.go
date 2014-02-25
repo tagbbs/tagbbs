@@ -14,7 +14,7 @@ func (b *BBS) NewUser(user string) error {
 		err   error
 	)
 
-	if err2 := b.meta("users", users, func(v interface{}) bool {
+	if err2 := b.modify("bbs:users", users, func(v interface{}) bool {
 		ok := users.Insert(user)
 		if !ok {
 			err = ErrUserExists
@@ -47,7 +47,7 @@ func (b *BBS) allow(key string, post Post, user string, write bool) bool {
 	}
 
 	users := &SortedString{}
-	check(b.meta("users", &users, nil))
+	check(b.modify("bbs:users", &users, nil))
 	if !users.Contain(user) {
 		return false
 	}
@@ -70,8 +70,8 @@ func (b *BBS) allow(key string, post Post, user string, write bool) bool {
 			switch parts[0] {
 			case "post":
 				// check nextid
-				var nextid int64
-				b.meta("nextid", &nextid, nil)
+				p, _ := b.Get("bbs:nextid", SuperUser)
+				nextid := p.Rev
 				postid, err := strconv.ParseInt(parts[1], 16, 64)
 				if err != nil {
 					log.Println(err)

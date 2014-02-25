@@ -102,21 +102,20 @@ func (b *BBS) Put(key string, post Post, user string) error {
 
 // Atomically obtain the next available key for post.
 func (b *BBS) NewPostKey() string {
-	var (
-		nextid int64
-		key    string
-	)
-	check(b.meta("nextid", &nextid, func(v interface{}) bool {
-		key = postkey(nextid)
-		nextid++
-		return true
-	}))
-	return key
-}
-
-// meta is modify with "bbs:" prefixed key.
-func (b *BBS) meta(key string, value interface{}, mutate func(v interface{}) bool) error {
-	return b.modify("bbs:"+key, value, mutate)
+	for {
+		p, err := b.Get("bbs:nextid", SuperUser)
+		check(err)
+		nextid := p.Rev
+		p.Rev++
+		err = b.Put("bbs:nextid", p, SuperUser)
+		if err == nil {
+			return postkey(nextid)
+		} else if err == rkv.ErrRevNotMatch {
+			continue
+		} else {
+			panic(err)
+		}
+	}
 }
 
 // modify can fetch the value of the key, optionally update it.

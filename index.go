@@ -115,8 +115,12 @@ func (b *BBS) RebuildIndex() {
 			log.Println(err)
 		}
 	}
-	var i, nextid int64
-	checklog(b.meta("nextid", &nextid, nil))
+	var i int64
+	p, err := b.Get("bbs:nextid", SuperUser)
+	if err != nil {
+		panic(err)
+	}
+	nextid := p.Rev
 	log.Println("NextId:", nextid)
 	// gather tags
 	var allNames, tmp SortedString
