@@ -23,19 +23,38 @@ func main() {
 
 	log.Println("initializing sshd")
 	config := &ssh.ServerConfig{
-		PasswordCallback: func(conn *ssh.ServerConn, user, pass string) bool {
-			params := url.Values{}
-			params.Set("user", user)
-			params.Set("pass", pass)
-			_, err := auths.Auth(params)
-			return err == nil
-		},
 		PublicKeyCallback: func(conn *ssh.ServerConn, user, algo string, pubkey []byte) bool {
 			params := url.Values{}
 			params.Set("user", user)
 			params.Set("algo", algo)
 			params.Set("pubkey", string(pubkey))
 			_, err := auths.Auth(params)
+			return err == nil
+		},
+		KeyboardInteractiveCallback: func(conn *ssh.ServerConn, user string, client ssh.ClientKeyboardInteractive) bool {
+			if user == metaUser {
+				return true
+			}
+			name, _, err := bbs.Version()
+			if err != nil {
+				return false
+			}
+			ans, err := client.Challenge(
+				user,
+				`Welcome to `+name+`!
+For registering, please re-login with . (a single dot) as username.
+You're trying to login as `+user+".",
+				[]string{"Password:"},
+				[]bool{false},
+			)
+			if err != nil {
+				log.Println(err)
+				return false
+			}
+			params := url.Values{}
+			params.Set("user", user)
+			params.Set("pass", ans[0])
+			_, err = auths.Auth(params)
 			return err == nil
 		},
 	}

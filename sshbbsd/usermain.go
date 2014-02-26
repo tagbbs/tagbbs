@@ -1,12 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"flag"
 	"io"
 	"log"
-	"net/url"
 	"reflect"
 	"strings"
 	"github.com/tagbbs/tagbbs/rkv"
@@ -16,6 +14,8 @@ import (
 	"github.com/tagbbs/tagbbs"
 	"github.com/tagbbs/tagbbs/auth"
 )
+
+const metaUser = "."
 
 var (
 	flagDB = flag.String("db", "mysql://bbs:bbs@/bbs?parseTime=true", "connection string")
@@ -32,43 +32,6 @@ func bbsinit() {
 	auths = auth.AuthenticationList{
 		auth.Password{rkv.ScopedStore{bbs.Storage, "userpass:"}},
 		ProfilePublicKeyAuth{bbs},
-	}
-}
-
-type ProfilePublicKeyAuth struct {
-	*tagbbs.BBS
-}
-
-func (p ProfilePublicKeyAuth) Auth(params url.Values) (string, error) {
-	user := params.Get("user")
-	algo := params.Get("algo")
-	pubkey := []byte(params.Get("pubkey"))
-
-	type Profile struct {
-		AuthorizedKeys string `yaml:"authorized_keys"`
-	}
-	post, err := p.Get("user:"+user, user)
-	if err != nil {
-		return "", err
-	}
-	profile := Profile{}
-	err = post.UnmarshalTo(&profile)
-	if err != nil {
-		return "", err
-	}
-	keys := []byte(profile.AuthorizedKeys)
-	for {
-		var (
-			pkey ssh.PublicKey
-			ok   bool
-		)
-		pkey, _, _, keys, ok = ssh.ParseAuthorizedKey(keys)
-		if !ok {
-			return "", auth.ErrNoMatchedPublicKey
-		}
-		if pkey.PublicKeyAlgo() == algo && bytes.Compare(ssh.MarshalPublicKey(pkey), pubkey) == 0 {
-			return user, nil
-		}
 	}
 }
 
@@ -99,6 +62,31 @@ func usermain(user string, ch ssh.Channel) {
 	} else {
 		term.Printf("%s: %s\r\n", name, version)
 	}
+
+	// meta user
+	if user == metaUser {
+		term.Println("Registering...")
+		term.SetPrompt("Username: ")
+		newuser, err := serverTerm.ReadLine()
+		if err != nil {
+			return
+		}
+		pass1, err := term.ReadPassword("Password: ")
+		if err != nil {
+			return
+		}
+		pass2, err := term.ReadPassword("Retype Password: ")
+		if err != nil {
+			return
+		}
+		if pass1 != pass2 {
+			term.Perror("Password Mismatch")
+		}
+		pw := auths.Of(reflect.TypeOf(auth.Password{})).(auth.Password)
+		term.PerrorIf(pw.New(newuser, pass1))
+		return
+	}
+
 	for {
 		line, err := serverTerm.ReadLine()
 		if err == io.EOF {
@@ -113,9 +101,6 @@ func usermain(user string, ch ssh.Channel) {
 		case "help":
 			term.Println("Available Commands:")
 			term.Println("help\r\nregister\r\npasswd\r\nwho\r\nlist [tag]\r\nget key\r\nput [key]")
-		case "register":
-			err := bbs.NewUser(user)
-			term.PerrorIf(err)
 		case "passwd":
 			pass1, _ := term.ReadPassword("New Password:")
 			pass2, _ := term.ReadPassword("New Password Again:")

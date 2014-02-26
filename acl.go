@@ -8,28 +8,10 @@ import (
 	"strings"
 )
 
-func (b *BBS) NewUser(user string) error {
-	var (
-		users = &SortedString{}
-		err   error
-	)
-
-	if err2 := b.modify("bbs:users", users, func(v interface{}) bool {
-		ok := users.Insert(user)
-		if !ok {
-			err = ErrUserExists
-		}
-		return ok
-	}); err2 != nil {
-		return err2
-	}
-
-	return err
-}
-
 // allow checks if the user if able to read or write.
 func (b *BBS) allow(key string, post Post, user string, write bool) bool {
-	// SuperUser or in SYSOP List
+	// Special Case: always allow SuperUsers
+	// SuperUser or in SuperUser's author list
 	if user == SuperUser {
 		return true
 	} else {
@@ -44,12 +26,6 @@ func (b *BBS) allow(key string, post Post, user string, write bool) bool {
 				}
 			}
 		}
-	}
-
-	users := &SortedString{}
-	check(b.modify("bbs:users", &users, nil))
-	if !users.Contain(user) {
-		return false
 	}
 
 	// deal with post

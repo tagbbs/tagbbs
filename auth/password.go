@@ -10,11 +10,31 @@ import (
 	"github.com/tagbbs/tagbbs/rkv"
 )
 
-var ErrWrongPassword = errors.New("Wrong Password")
+var (
+	ErrUserExist     = errors.New("User Exist")
+	ErrUserNotExist  = errors.New("User Not Exist")
+	ErrWrongPassword = errors.New("Wrong Password")
+)
 
 type Password struct {
 	// Usually this should be a scoped storage.
 	Store rkv.Storage
+}
+
+func (p Password) New(user, pass string) error {
+	v, err := p.Store.Get(user)
+	if err != nil {
+		return err
+	}
+	if v.Rev != 0 {
+		return ErrUserExist
+	}
+	v.Rev++
+	v.Content, err = json.Marshal(passhash(user, pass))
+	if err != nil {
+		return err
+	}
+	return p.Store.Put(user, v)
 }
 
 func (p Password) Set(user, pass string) error {
@@ -38,7 +58,7 @@ func (p Password) Auth(params url.Values) (string, error) {
 		return "", err
 	}
 	if v.Rev == 0 {
-		return user, nil
+		return "", ErrUserNotExist
 	}
 	var phrase string
 	if err := json.Unmarshal(v.Content, &phrase); err == nil {
