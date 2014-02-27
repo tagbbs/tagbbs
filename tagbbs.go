@@ -16,11 +16,11 @@ var (
 )
 
 type BBS struct {
-	rkv.Storage
+	Storage rkv.S
 }
 
-func NewBBS(store rkv.Storage) *BBS {
-	b := &BBS{Storage: store}
+func NewBBS(store rkv.Interface) *BBS {
+	b := &BBS{rkv.S{store}}
 	b.init()
 	name, version, err := b.Version()
 	if err != nil {

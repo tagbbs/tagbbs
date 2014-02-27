@@ -85,9 +85,6 @@ func main() {
 	}
 
 	bbs := tagbbs.NewBBSFromString(*flagDB)
-	bbs.NewUser("u1")
-	bbs.NewUser("u2")
-
 	start := time.Now()
 
 	threads := 10

@@ -9,3 +9,9 @@ const (
 var (
 	version string
 )
+
+func init() {
+	if len(version) == 0 {
+		version = "dev"
+	}
+}

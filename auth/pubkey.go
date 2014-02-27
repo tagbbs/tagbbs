@@ -13,7 +13,7 @@ var ErrNoMatchedPublicKey = errors.New("No Matched Public Key")
 
 type PublicKey struct {
 	// Usually this should be a scoped storage.
-	Store rkv.Storage
+	Store rkv.Interface
 }
 
 func (p PublicKey) Set(user string, authorizedKeys []byte) error {

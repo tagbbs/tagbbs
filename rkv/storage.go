@@ -20,7 +20,7 @@ type Value struct {
 	Content   []byte
 }
 
-type Storage interface {
+type Interface interface {
 	// Get the Post of given Key.
 	Get(key string) (Value, error)
 	// Set the Post to the given Key.
@@ -30,7 +30,7 @@ type Storage interface {
 }
 
 // NewStore is a helper method for creating a built-in storage.
-func NewStore(source string) (store Storage, err error) {
+func NewStore(source string) (store Interface, err error) {
 	u, err := url.Parse(source)
 	if err != nil {
 		return
@@ -53,7 +53,7 @@ func NewStore(source string) (store Storage, err error) {
 	return store, err
 }
 
-func NewScopedStore(source string, prefix string) (store Storage, err error) {
+func NewScopedStore(source string, prefix string) (store Interface, err error) {
 	store, err = NewStore(source)
 	store = ScopedStore{store, prefix}
 	return

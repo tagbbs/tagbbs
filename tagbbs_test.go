@@ -28,13 +28,6 @@ Hello World!
 	userA := "userA"
 	userB := "userB"
 
-	if err := b.NewUser(userA); err != nil {
-		t.Fatal(err)
-	}
-	if err := b.NewUser(userB); err != nil {
-		t.Fatal(err)
-	}
-
 	// Test Put
 	if err := b.Put(p1key, p1, userA); err != nil {
 		t.Fatal(err)
@@ -52,7 +45,7 @@ Hello World!
 	if list, _, err := b.Query("a"); err != nil {
 		t.Fatal(err)
 	} else if len(list) != 2 {
-		t.Fatal("Wrong number of posts returned.")
+		t.Fatal("Wrong number of posts returned.", list)
 	} else {
 		pid = list[0]
 	}
@@ -69,9 +62,6 @@ Hello World!
 	// Test Permission
 	if _, err := b.Get(p1key, userB); err != nil {
 		t.Fatal(err, pid)
-	}
-	if _, err := b.Get(p1key, "NotExistedUser"); err != ErrAccessDenied {
-		t.Fatal(err)
 	}
 	if err := b.Put(p1key, p1, userB); err != ErrAccessDenied {
 		t.Fatal(err)

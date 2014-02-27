@@ -18,7 +18,7 @@ var (
 
 type Password struct {
 	// Usually this should be a scoped storage.
-	Store rkv.Storage
+	Store rkv.Interface
 }
 
 func (p Password) New(user, pass string) error {

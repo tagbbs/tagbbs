@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func analyze(key string, p Post) (keys SortedString) {
+func analyze(key string, p Post) (keys []string) {
 	switch {
 	case strings.HasPrefix(key, "post:"):
 		if len(bytes.Trim(p.Content, " \r\n\t")) == 0 {
@@ -25,32 +25,22 @@ func analyze(key string, p Post) (keys SortedString) {
 		} else {
 			keys = append(keys, key)
 		}
-		keys.Sort()
-		keys.Unique()
 	}
 	return
 }
 
-func (b *BBS) indexRemove(key string, p Post) SortedString {
-	names := analyze(key, p)
-	for _, name := range names {
-		ids := &SortedString{}
-		b.modify("list:"+name, &ids, func(v interface{}) bool {
-			return ids.Delete(key)
-		})
-	}
-	return names
-}
-
-func (b *BBS) indexAdd(key string, p Post) SortedString {
+func (b *BBS) indexRemove(key string, p Post) {
 	keywords := analyze(key, p)
 	for _, word := range keywords {
-		ids := &SortedString{}
-		b.modify("list:"+word, &ids, func(v interface{}) bool {
-			return ids.Insert(key)
-		})
+		b.Storage.SetDelete("list:"+word, key)
 	}
-	return keywords
+}
+
+func (b *BBS) indexAdd(key string, p Post) {
+	keywords := analyze(key, p)
+	for _, word := range keywords {
+		b.Storage.SetInsert("list:"+word, key)
+	}
 }
 
 func (b *BBS) indexReplace(key string, oldpost, newpost Post) {
@@ -85,26 +75,16 @@ func parseQuery(q string) (p ParsedQuery) {
 	return
 }
 
-func (b *BBS) Query(q string) ([]string, ParsedQuery, error) {
-	p := parseQuery(q)
+func (b *BBS) Query(q string) (ss []string, p ParsedQuery, err error) {
+	p = parseQuery(q)
 	if len(p.Tags) == 0 {
-		p.Tags = []string{""}
+		return []string{}, p, nil
 	}
 	if p.Before == 0 && p.After == 0 {
 		p.Before = 20
 	}
-	var lists []SortedString
-	for _, tag := range p.Tags {
-		var ids SortedString
-		err := b.modify("list:"+tag, &ids, nil)
-		if err != nil {
-			return nil, p, err
-		}
-		lists = append(lists, ids)
-	}
-	ids := SortedIntersect(lists...)
-	ids = ids.Slice(p.Cursor, p.Before, p.After)
-	return ids, p, nil
+	ss, err = b.Storage.SetSlice("list:"+p.Tags[0], p.Cursor, p.Before, p.After)
+	return
 }
 
 // Rebuild all index.
@@ -123,21 +103,22 @@ func (b *BBS) RebuildIndex() {
 	nextid := p.Rev
 	log.Println("NextId:", nextid)
 	// gather tags
-	var allNames, tmp SortedString
+	var allNames map[string]bool
 	for i = 0; i < nextid; i++ {
 		key := postkey(i)
 		p, err := b.Get(key, SuperUser)
 		checklog(err)
 		names := analyze(key, p)
-		allNames = append(allNames, names...)
-		allNames.Sort()
-		allNames.Unique()
+		for _, name := range names {
+			allNames[name] = true
+		}
 	}
 	log.Println("All List Names:", len(allNames))
 	// remove all lists
-	for _, name := range allNames {
-		checklog(b.modify("list:"+name, &tmp, func(v interface{}) bool {
-			tmp = SortedString{}
+	for name := range allNames {
+		var tmp []string
+		checklog(b.Storage.ReadModify("list:"+name, &tmp, func(v interface{}) bool {
+			tmp = nil
 			return true
 		}))
 	}
