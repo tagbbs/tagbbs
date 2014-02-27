@@ -41,19 +41,19 @@ func (s SessionManager) Request(ss Session) (sid string, err error) {
 	sid = hex.EncodeToString(randbits)
 
 	ss.LoginTime = time.Now()
-	err = s.Store.Write("session:"+sid, 1, ss)
+	err = s.Store.Write(sid, 1, ss)
 	if err != nil {
 		return
 	}
 
-	err = s.Store.SetInsert("usersessions:"+ss.User, sid)
+	err = s.Store.SetInsert("user:"+ss.User, sid)
 	return
 }
 
 func (s SessionManager) Revoke(sid string) (err error) {
 	var session Session
 	var user string
-	err = s.Store.ReadModify("session:"+sid, &session, func(_ interface{}) bool {
+	err = s.Store.ReadModify(sid, &session, func(_ interface{}) bool {
 		user = session.User
 		session = Session{}
 		return true
@@ -61,12 +61,12 @@ func (s SessionManager) Revoke(sid string) (err error) {
 	if err != nil {
 		return
 	}
-	err = s.Store.SetDelete("usersessions:"+user, sid)
+	err = s.Store.SetDelete("user:"+user, sid)
 	return
 }
 
 func (s SessionManager) Get(sid string) (session Session, err error) {
-	err = s.Store.Read("session:"+sid, nil, &session)
+	err = s.Store.Read(sid, nil, &session)
 	if len(session.User) == 0 {
 		err = ErrSessionNotExist
 	}
@@ -75,7 +75,7 @@ func (s SessionManager) Get(sid string) (session Session, err error) {
 
 func (s SessionManager) SetCapability(sid string, capability Capability) error {
 	var session Session
-	return s.Store.ReadModify("session:"+sid, &session, func(_ interface{}) bool {
+	return s.Store.ReadModify(sid, &session, func(_ interface{}) bool {
 		session.Capability = capability
 		return true
 	})
@@ -83,7 +83,7 @@ func (s SessionManager) SetCapability(sid string, capability Capability) error {
 
 func (s SessionManager) List(user string) (ss map[string]Session, err error) {
 	var sss []string
-	sss, err = s.Store.SetSlice("usersessions:"+user, "", 64, 0)
+	sss, err = s.Store.SetSlice("user:"+user, "", 64, 0)
 	if err != nil {
 		return
 	}

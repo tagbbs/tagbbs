@@ -21,8 +21,12 @@ type BBS struct {
 }
 
 func NewBBS(store rkv.Interface) *BBS {
-	s := rkv.S{store}
-	b := &BBS{Storage: s, SessionManager: SessionManager{s}}
+	b := &BBS{
+		Storage: rkv.S{store},
+		SessionManager: SessionManager{
+			rkv.S{rkv.ScopedStore{store, "session:"}},
+		},
+	}
 	b.init()
 	name, version, err := b.Version()
 	if err != nil {
