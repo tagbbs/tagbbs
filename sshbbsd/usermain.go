@@ -36,7 +36,7 @@ func bbsinit() {
 }
 
 // Replace with custom terminal implementation.
-func usermain(user string, ch ssh.Channel) {
+func usermain(user, remoteAddr string, ch ssh.Channel) {
 	// catch all errors so that the main server won't crash
 	defer func() {
 		if err := recover(); err != nil {
@@ -54,6 +54,20 @@ func usermain(user string, ch ssh.Channel) {
 	// ready to accept the connection
 	ch.Accept()
 	defer ch.Close()
+
+	sid, err := bbs.SessionManager.Request(tagbbs.Session{
+		User:       user,
+		UserAgent:  "Terminal/SSH",
+		Capability: tagbbs.CapRead | tagbbs.CapPost,
+		RemoteAddr: remoteAddr,
+	})
+	if err != nil {
+		term.PerrorIf(err)
+		return
+	}
+	defer func() {
+		bbs.SessionManager.Revoke(sid)
+	}()
 
 	// real logic here
 	name, version, err := bbs.Version()
@@ -88,6 +102,14 @@ func usermain(user string, ch ssh.Channel) {
 	}
 
 	for {
+		// check if session still valid
+		_, err := bbs.SessionManager.Get(sid)
+		if err != nil {
+			term.Perror(err)
+			break
+		}
+
+		// REPL
 		line, err := serverTerm.ReadLine()
 		if err == io.EOF {
 			return

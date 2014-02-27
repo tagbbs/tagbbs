@@ -110,6 +110,6 @@ func handleServerConn(sConn *ssh.ServerConn) {
 			break
 		}
 
-		go usermain(sConn.User, ch)
+		go usermain(sConn.User, sConn.RemoteAddr().String(), ch)
 	}
 }

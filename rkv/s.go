@@ -8,17 +8,37 @@ type S struct {
 	Interface
 }
 
-func (s S) ReadModify(key string, v interface{}, mutate func(v interface{}) bool) error {
-begin:
-	// read value
-	p, err := s.Get(key)
+func (s S) Read(key string, rev *int64, v interface{}) (err error) {
+	var p Value
+	p, err = s.Get(key)
 	if err != nil {
-		return err
+		return
+	}
+	if rev != nil {
+		*rev = p.Rev
 	}
 	if len(p.Content) > 0 {
-		if err := json.Unmarshal(p.Content, v); err != nil {
-			return err
-		}
+		err = json.Unmarshal(p.Content, v)
+	}
+	return
+}
+
+func (s S) Write(key string, rev int64, v interface{}) (err error) {
+	p := Value{Rev: rev}
+	p.Content, err = json.Marshal(v)
+	if err != nil {
+		return
+	}
+	return s.Put(key, p)
+}
+
+func (s S) ReadModify(key string, v interface{}, mutate func(v interface{}) bool) (err error) {
+	var rev int64
+begin:
+	// read value
+	err = s.Read(key, &rev, v)
+	if err != nil {
+		return
 	}
 
 	// mutate value
@@ -27,20 +47,12 @@ begin:
 	}
 
 	// put value if modified.
-	if p.Content, err = json.Marshal(v); err != nil {
-		return err
-	}
-	p.Rev++
-	err = s.Put(key, p)
+	err = s.Write(key, rev+1, v)
 	if err == ErrRevNotMatch {
 		goto begin
 	} else {
 		return err
 	}
-}
-
-func (s S) Read(key string, v interface{}) error {
-	return s.ReadModify(key, v, nil)
 }
 
 // Sorted Set of strings.

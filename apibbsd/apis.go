@@ -1,8 +1,7 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/hex"
+	"net/http"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -22,6 +21,17 @@ func bbsinit() {
 	auths = auth.AuthenticationList{
 		auth.Password{rkv.ScopedStore{bbs.Storage, "userpass:"}},
 	}
+
+	http.HandleFunc("/login", api(login, false))
+	http.HandleFunc("/logout", api(logout, false))
+	http.HandleFunc("/version", api(version, false))
+	http.HandleFunc("/register", api(register, false))
+	http.HandleFunc("/sessions", api(sessions, true))
+	http.HandleFunc("/passwd", api(passwd, true))
+	http.HandleFunc("/who", api(who, true))
+	http.HandleFunc("/list", api(list, true))
+	http.HandleFunc("/get", api(get, true))
+	http.HandleFunc("/put", api(put, true))
 }
 
 func version(_, _ string, params url.Values) (result interface{}, err error) {
@@ -34,37 +44,26 @@ func version(_, _ string, params url.Values) (result interface{}, err error) {
 	return
 }
 
-func login(_, _ string, params url.Values) (interface{}, error) {
-	// r.Form should contain "user" and "pass"
-	user, err := auths.Auth(params)
-	if err == nil {
-		randbits := make([]byte, 16)
-		_, err = rand.Read(randbits)
-		if err != nil {
-			panic(err)
-		}
-		sid := hex.EncodeToString(randbits)
-		sessionsMutex.Lock()
-		sessions[sid] = user
-		sessionsMutex.Unlock()
-		return sid, nil
+func login(_, _ string, params url.Values) (sid interface{}, err error) {
+	var user string
+	user, err = auths.Auth(params)
+	if err != nil {
+		return
 	}
-	return nil, err
+	sid, err = bbs.SessionManager.Request(tagbbs.Session{
+		User:       user,
+		UserAgent:  "Browser",
+		Capability: tagbbs.CapRead | tagbbs.CapPost,
+		RemoteAddr: params.Get("REMOTE_ADDR"),
+	})
+	if err != nil {
+		return
+	}
+	return
 }
 
 func logout(_, _ string, params url.Values) (interface{}, error) {
-	sessionsMutex.Lock()
-	defer sessionsMutex.Unlock()
-
-	// delete session id
-	sid := params.Get("session")
-	_, ok := sessions[sid]
-	if ok {
-		delete(sessions, sid)
-		return nil, nil
-	} else {
-		return nil, ErrUnauthorized
-	}
+	return nil, bbs.SessionManager.Revoke(params.Get("session"))
 }
 
 func register(_, _ string, params url.Values) (interface{}, error) {
@@ -74,6 +73,10 @@ func register(_, _ string, params url.Values) (interface{}, error) {
 
 func who(api, user string, params url.Values) (interface{}, error) {
 	return user, nil
+}
+
+func sessions(api, user string, params url.Values) (interface{}, error) {
+	return bbs.SessionManager.List(user)
 }
 
 func passwd(api, user string, params url.Values) (interface{}, error) {
