@@ -2,17 +2,14 @@
 package tagbbs
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
-	"time"
 
 	"github.com/tagbbs/tagbbs/rkv"
 )
 
 var (
 	ErrAccessDenied = errors.New("Access Denied")
-	ErrUserExists   = errors.New("User Exists")
 )
 
 type BBS struct {
@@ -121,38 +118,5 @@ func (b *BBS) NewPostKey() string {
 		} else {
 			panic(err)
 		}
-	}
-}
-
-// modify can fetch the value of the key, optionally update it.
-// if the update failed due to Revision Mismatch, mutate will be applied again.
-func (b *BBS) modify(key string, value interface{}, mutate func(v interface{}) bool) error {
-begin:
-	// read value
-	p, err := b.Storage.Get(key)
-	if err != nil {
-		return err
-	}
-	if len(p.Content) > 0 {
-		if err := json.Unmarshal(p.Content, value); err != nil {
-			return err
-		}
-	}
-	// mutate value
-	if mutate == nil || !mutate(value) {
-		return nil
-	}
-
-	// write value if modified.
-	if p.Content, err = json.Marshal(value); err != nil {
-		return err
-	}
-	p.Rev++
-	p.Timestamp = time.Now()
-	err = b.Storage.Put(key, p)
-	if err == rkv.ErrRevNotMatch {
-		goto begin
-	} else {
-		return err
 	}
 }
