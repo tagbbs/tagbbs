@@ -9,12 +9,10 @@ import (
 	"net/http"
 	"net/url"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/tagbbs/tagbbs"
 )
 
 var (
-	flagDB     = flag.String("db", "mysql://bbs:bbs@/bbs?parseTime=true", "connection string")
 	flagListen = flag.String("listen", ":8023", "address to listen on")
 	flagCert   = flag.String("cert", "", "HTTPS: Certificate")
 	flagKey    = flag.String("key", "", "HTTPS: Key")

@@ -28,7 +28,7 @@ func main() {
 			params.Set("user", user)
 			params.Set("algo", algo)
 			params.Set("pubkey", string(pubkey))
-			_, err := auths.Auth(params)
+			_, err := bbs.Auth.Auth(params)
 			return err == nil
 		},
 		KeyboardInteractiveCallback: func(conn *ssh.ServerConn, user string, client ssh.ClientKeyboardInteractive) bool {
@@ -54,7 +54,7 @@ You're trying to login as `+user+".",
 			params := url.Values{}
 			params.Set("user", user)
 			params.Set("pass", ans[0])
-			_, err = auths.Auth(params)
+			_, err = bbs.Auth.Auth(params)
 			return err == nil
 		},
 	}

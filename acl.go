@@ -3,9 +3,14 @@
 package tagbbs
 
 import (
+	"errors"
 	"log"
 	"strconv"
 	"strings"
+)
+
+var (
+	ErrAccessDenied = errors.New("Access Denied")
 )
 
 // allow checks if the user if able to read or write.

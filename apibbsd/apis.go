@@ -1,26 +1,26 @@
 package main
 
 import (
+	"flag"
 	"net/http"
 	"net/url"
 	"reflect"
 	"strconv"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/tagbbs/tagbbs"
 	"github.com/tagbbs/tagbbs/auth"
-	"github.com/tagbbs/tagbbs/rkv"
 )
 
+var flagConfig = flag.String("config", "config.yml", "Config File")
+
 var (
-	bbs   *tagbbs.BBS
-	auths auth.AuthenticationList
+	bbs *tagbbs.BBS
 )
 
 func bbsinit() {
-	bbs = tagbbs.NewBBSFromString(*flagDB)
-	auths = auth.AuthenticationList{
-		auth.Password{rkv.ScopedStore{bbs.Storage, "userpass:"}},
-	}
+	bbs = tagbbs.NewBBSFromConfig(*flagConfig)
+	bbs.Init()
 
 	http.HandleFunc("/login", api(login, false))
 	http.HandleFunc("/logout", api(logout, false))
@@ -46,7 +46,7 @@ func version(_, _ string, params url.Values) (result interface{}, err error) {
 
 func login(_, _ string, params url.Values) (sid interface{}, err error) {
 	var user string
-	user, err = auths.Auth(params)
+	user, err = bbs.Auth.Auth(params)
 	if err != nil {
 		return
 	}
@@ -67,7 +67,7 @@ func logout(_, _ string, params url.Values) (interface{}, error) {
 }
 
 func register(_, _ string, params url.Values) (interface{}, error) {
-	pw := auths.Of(reflect.TypeOf(auth.Password{})).(auth.Password)
+	pw := bbs.Auth.Of(reflect.TypeOf(auth.Password{})).(auth.Password)
 	return nil, pw.New(params.Get("user"), params.Get("pass"))
 }
 
@@ -81,7 +81,7 @@ func sessions(api, user string, params url.Values) (interface{}, error) {
 
 func passwd(api, user string, params url.Values) (interface{}, error) {
 	pass := params.Get("pass")
-	pw := auths.Of(reflect.TypeOf(auth.Password{})).(auth.Password)
+	pw := bbs.Auth.Of(reflect.TypeOf(auth.Password{})).(auth.Password)
 	return nil, pw.Set(user, pass)
 }
 

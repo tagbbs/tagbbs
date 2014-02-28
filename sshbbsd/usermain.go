@@ -7,7 +7,6 @@ import (
 	"log"
 	"reflect"
 	"strings"
-	"github.com/tagbbs/tagbbs/rkv"
 
 	"code.google.com/p/go.crypto/ssh"
 	_ "github.com/go-sql-driver/mysql"
@@ -18,9 +17,8 @@ import (
 const metaUser = "."
 
 var (
-	flagDB = flag.String("db", "mysql://bbs:bbs@/bbs?parseTime=true", "connection string")
-	bbs    *tagbbs.BBS
-	auths  auth.AuthenticationList
+	bbs        *tagbbs.BBS
+	flagConfig = flag.String("config", "config.yml", "Config File")
 )
 
 var (
@@ -28,11 +26,12 @@ var (
 )
 
 func bbsinit() {
-	bbs = tagbbs.NewBBSFromString(*flagDB)
-	auths = auth.AuthenticationList{
-		auth.Password{rkv.ScopedStore{bbs.Storage, "userpass:"}},
+	bbs = tagbbs.NewBBSFromConfig(*flagConfig)
+	bbs.Auth = append(
+		bbs.Auth,
 		ProfilePublicKeyAuth{bbs},
-	}
+	)
+	bbs.Init()
 }
 
 // Replace with custom terminal implementation.
@@ -96,7 +95,7 @@ func usermain(user, remoteAddr string, ch ssh.Channel) {
 		if pass1 != pass2 {
 			term.Perror("Password Mismatch")
 		}
-		pw := auths.Of(reflect.TypeOf(auth.Password{})).(auth.Password)
+		pw := bbs.Auth.Of(reflect.TypeOf(auth.Password{})).(auth.Password)
 		term.PerrorIf(pw.New(newuser, pass1))
 		return
 	}
@@ -129,7 +128,7 @@ func usermain(user, remoteAddr string, ch ssh.Channel) {
 			if pass1 != pass2 {
 				term.Perror("Password Mismatch")
 			} else {
-				pw := auths.Of(reflect.TypeOf(auth.Password{})).(auth.Password)
+				pw := bbs.Auth.Of(reflect.TypeOf(auth.Password{})).(auth.Password)
 				term.PerrorIf(pw.Set(user, pass1))
 			}
 		case "who":

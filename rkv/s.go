@@ -69,7 +69,7 @@ func (s S) SetInsert(key string, values ...string) error {
 }
 
 // SetDelete will delete the given values from the key.
-func (s *S) SetDelete(key string, values ...string) error {
+func (s S) SetDelete(key string, values ...string) error {
 	var vv SortedString
 	return s.ReadModify(key, &vv, func(_ interface{}) (r bool) {
 		for _, v := range values {

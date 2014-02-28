@@ -1,0 +1,10 @@
+# This is an example of the config file.
+storage: &default "mem://"
+index:
+  storage: *default
+session:
+  storage: *default
+auth:
+  - type: Password
+    storage: *default
+

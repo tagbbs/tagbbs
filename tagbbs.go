@@ -2,44 +2,90 @@
 package tagbbs
 
 import (
-	"errors"
+	"io/ioutil"
 	"log"
+	"launchpad.net/goyaml"
 
+	"github.com/tagbbs/tagbbs/auth"
 	"github.com/tagbbs/tagbbs/rkv"
 )
 
-var (
-	ErrAccessDenied = errors.New("Access Denied")
+const (
+	SuperUser = "sysop"
 )
+
+var version string
+
+func init() {
+	if len(version) == 0 {
+		version = "dev"
+	}
+}
 
 type BBS struct {
 	Storage rkv.S
+	Index
+	Auth auth.AuthenticationList
 	SessionManager
 }
 
-func NewBBS(store rkv.Interface) *BBS {
-	b := &BBS{
-		Storage: rkv.S{store},
-		SessionManager: SessionManager{
-			rkv.S{rkv.ScopedStore{store, "session:"}},
-		},
-	}
-	b.init()
-	name, version, err := b.Version()
+func NewBBSFromConfig(configFile string) *BBS {
+	bytes, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		panic(err)
 	}
-	log.Println(name, version)
-	return b
+	var config struct {
+		Storage string
+		Index   struct {
+			Storage string
+		}
+		Session struct {
+			Storage string
+		}
+		// TODO make this more flexible
+		Auth []struct {
+			Type    string
+			Storage string
+		}
+	}
+	if err := goyaml.Unmarshal(bytes, &config); err != nil {
+		panic(err)
+	}
+
+	must := func(s rkv.Interface, err error) rkv.Interface {
+		if err != nil {
+			panic(err)
+		}
+		return s
+	}
+
+	bbs := &BBS{
+		Storage: rkv.S{must(rkv.NewStore(config.Storage))},
+		Index: Index{
+			rkv.S{
+				rkv.ScopedStore{must(rkv.NewStore(config.Index.Storage)), "list:"}},
+		},
+		SessionManager: SessionManager{
+			rkv.S{
+				rkv.ScopedStore{must(rkv.NewStore(config.Session.Storage)), "session:"},
+			},
+		},
+	}
+	alist := auth.AuthenticationList{}
+	for _, au := range config.Auth {
+		switch au.Type {
+		case "Password":
+			alist = append(alist, auth.Password{
+				rkv.ScopedStore{must(rkv.NewStore(au.Storage)), "userpass:"},
+			})
+		}
+	}
+	bbs.Auth = alist
+
+	return bbs
 }
 
-func NewBBSFromString(db string) *BBS {
-	store, err := rkv.NewStore(db)
-	check(err)
-	return NewBBS(store)
-}
-
-func (b *BBS) init() {
+func (b *BBS) Init() {
 	p, err := b.Get("post:0", SuperUser)
 	check(err)
 	if p.Rev == 0 {
@@ -58,6 +104,12 @@ Welcome to TagBBS!
 `)
 		check(b.Put("post:0", p, SuperUser))
 	}
+
+	name, version, err := b.Version()
+	if err != nil {
+		panic(err)
+	}
+	log.Println("Initialized:", name, version)
 }
 
 // Version will return the name and build version of this installation.
@@ -99,7 +151,7 @@ func (b *BBS) Put(key string, post Post, user string) error {
 	if err := b.Storage.Put(key, rkv.Value(post)); err != nil {
 		return err
 	}
-	b.indexReplace(key, Post(oldpost), Post(post))
+	b.Index.Replace(key, Post(oldpost), Post(post))
 	return nil
 }
 
